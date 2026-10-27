@@ -1,19 +1,14 @@
-<!doctype html>
-<html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>哈農節拍檢查</title>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>哈農練習評分</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&display=swap">
 <style>
-/* Layout: one narrow practice-stand column — settings, a big live readout, then the session report. */
+/* Layout: practice-stand column — choose exercise, a scrolling piano roll while playing, then a graded report with per-finger detail. */
 :root{
   --bg:#eef1f4; --surface:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#d6dde4; --soft:#f5f7f9;
   --accent:#a3263a; --accent-ink:#ffffff;
-  --early:#2f6fb2; --late:#b8700c; --good:#2a8653;
-  --lh:#6a4fb3; --rh:#a3263a;
+  --early:#2f6fb2; --late:#b8700c; --good:#2a8653; --bad:#c23a3a;
+  --rh:#a3263a; --lh:#5b47a8;
   --f-display:"Noto Serif TC","Songti TC",serif;
   --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
   --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
@@ -21,464 +16,735 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#10151b; --surface:#19212a; --ink:#e6ebf0; --muted:#98a4b1; --line:#2c3743; --soft:#141b22;
   --accent:#e0566b; --accent-ink:#1a0c10;
-  --early:#6ea9ea; --late:#e8a23a; --good:#4fbf82; --lh:#a891f2; --rh:#e0566b; color-scheme:dark}}
+  --early:#6ea9ea; --late:#e8a23a; --good:#4fbf82; --bad:#ef6a6a; --rh:#e0566b; --lh:#a891f2; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#10151b; --surface:#19212a; --ink:#e6ebf0; --muted:#98a4b1; --line:#2c3743; --soft:#141b22;
   --accent:#e0566b; --accent-ink:#1a0c10;
-  --early:#6ea9ea; --late:#e8a23a; --good:#4fbf82; --lh:#a891f2; --rh:#e0566b; color-scheme:dark}
+  --early:#6ea9ea; --late:#e8a23a; --good:#4fbf82; --bad:#ef6a6a; --rh:#e0566b; --lh:#a891f2; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
-.wrap{max-width:640px;margin:0 auto;display:grid;gap:16px}
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:680px;margin:0 auto;display:grid;gap:16px}
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:3px solid var(--accent);padding-bottom:10px}
-h1{font-family:var(--f-display);font-size:1.6rem;margin:0;letter-spacing:.02em;text-wrap:balance}
+h1{font-family:var(--f-display);font-size:1.6rem;margin:0;letter-spacing:.02em}
 .sub{color:var(--muted);font-size:.85rem;margin:2px 0 0}
-.chip{font-size:.8rem;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap}
-.chip.ok{color:var(--good);border-color:var(--good)}
-.chip.warn{color:var(--late);border-color:var(--late)}
+.chip{font-size:.8rem;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.chip.ok{color:var(--good);border-color:var(--good)} .chip.warn{color:var(--late);border-color:var(--late)}
 section{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:14px;min-width:0}
-h2{font-size:.78rem;letter-spacing:.12em;color:var(--muted);margin:0;font-weight:500}
+h2{font-size:.78rem;letter-spacing:.12em;color:var(--muted);margin:0;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+h3{font-size:.95rem;margin:0}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-label.f{display:grid;gap:6px;font-size:.85rem;color:var(--muted)}
+.f{display:grid;gap:6px;font-size:.85rem;color:var(--muted);min-width:0}
 .stepper{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft)}
-.stepper button{border:0;background:transparent;color:var(--ink);font-size:1.2rem;width:44px;cursor:pointer}
+.stepper button{border:0;background:transparent;color:var(--ink);font-size:1.2rem;width:44px;cursor:pointer;flex:none}
 .stepper button:active{background:var(--line)}
-.stepper input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);text-align:center;font-family:var(--f-num);font-size:1.15rem;padding:8px 0}
+.stepper input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);text-align:center;font-family:var(--f-num);font-size:1.1rem;padding:8px 0}
 select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.seg button{flex:1;border:0;background:var(--soft);color:var(--muted);padding:10px 4px;font:inherit;font-size:.85rem;cursor:pointer}
+.seg button{flex:1;border:0;background:var(--soft);color:var(--muted);padding:9px 4px;font:inherit;font-size:.85rem;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .toggle{display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--ink)}
 .toggle input{width:18px;height:18px;accent-color:var(--accent)}
 .btn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:9px 14px;font:inherit;font-size:.88rem;cursor:pointer}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700;font-size:1.05rem;padding:14px;width:100%}
 .btn.primary.stop{background:var(--ink);border-color:var(--ink);color:var(--bg)}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hint{font-size:.82rem;color:var(--muted);margin:0}
 .num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+details{border-top:1px solid var(--line);padding-top:10px}
+details summary{cursor:pointer;font-size:.88rem;color:var(--muted)}
+details[open] summary{margin-bottom:12px}
+.adv{display:grid;gap:12px}
 
-/* live readout */
-.live{text-align:center;gap:10px}
-.beats{display:flex;justify-content:center;gap:10px}
-.beats span{width:14px;height:14px;border-radius:50%;background:var(--line);transition:background .05s}
-.beats span.on{background:var(--ink)}
-.beats span.on.first{background:var(--accent)}
-.big{font-family:var(--f-num);font-size:3.2rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
-.verdict{font-size:1.05rem;font-weight:700;min-height:1.5em}
-.e{color:var(--early)} .l{color:var(--late)} .g{color:var(--good)}
-.meter{position:relative;height:28px;border-radius:6px;background:var(--soft);border:1px solid var(--line);overflow:hidden}
-.meter .zone{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--good) 18%,transparent)}
-.meter .mid{position:absolute;top:0;bottom:0;left:50%;width:2px;background:var(--muted);transform:translateX(-1px)}
-.meter .needle{position:absolute;top:3px;bottom:3px;width:6px;border-radius:3px;background:var(--ink);left:50%;transform:translateX(-3px);transition:left .08s}
-.meterlbl{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)}
+.rollbox{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft)}
+canvas{display:block;width:100%}
+#roll{height:250px}
+.readout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;text-align:center}
+.readout div{display:grid;gap:0}
+.readout b{font-family:var(--f-num);font-size:1.35rem;font-variant-numeric:tabular-nums;font-weight:600;line-height:1.2}
+.readout small{color:var(--muted);font-size:.75rem}
 .progress{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
 .progress i{display:block;height:100%;width:0;background:var(--accent)}
 .status{font-size:.9rem;color:var(--muted);min-height:1.4em}
+.e{color:var(--early)} .l{color:var(--late)} .g{color:var(--good)} .x{color:var(--bad)}
+.legend{display:flex;gap:12px;font-size:.78rem;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:8px;border-radius:2px;margin-right:5px;vertical-align:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
 
-/* report */
-.badge{font-size:.72rem;padding:2px 8px;border-radius:4px;background:var(--soft);border:1px dashed var(--muted);color:var(--muted);margin-left:8px;letter-spacing:0}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.stat{display:grid;gap:2px}
-.stat b{font-family:var(--f-num);font-size:1.4rem;font-variant-numeric:tabular-nums;font-weight:600}
-.stat small{color:var(--muted);font-size:.78rem}
-.canvasbox{position:relative;width:100%;min-width:0}
-canvas{display:block;width:100%}
-#chart{height:200px}
-.legend{display:flex;gap:14px;font-size:.8rem;color:var(--muted);flex-wrap:wrap}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
-table{width:100%;border-collapse:collapse;font-size:.88rem}
-th,td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right}
+.badge{font-size:.72rem;padding:2px 8px;border-radius:4px;background:var(--soft);border:1px dashed var(--muted);color:var(--muted);letter-spacing:0}
+.scorehead{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.total{font-family:var(--f-num);font-size:3.4rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.total small{font-size:1rem;color:var(--muted);font-weight:500}
+.grade{font-weight:700;font-size:1rem;margin-top:4px}
+.parts{display:grid;gap:7px}
+.part{display:grid;grid-template-columns:5.5em 1fr 2.6em;gap:8px;align-items:center;font-size:.85rem}
+.part .bar{height:8px;border-radius:4px;background:var(--soft);border:1px solid var(--line);overflow:hidden}
+.part .bar i{display:block;height:100%;background:var(--ink)}
+.part .v{text-align:right;font-family:var(--f-num)}
+.takeaway{background:var(--soft);border-radius:8px;padding:12px 14px;font-size:.92rem;display:grid;gap:6px}
+.takeaway div::before{content:"・";color:var(--accent);font-weight:700}
+.tablebox{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th:first-child,td:first-child{text-align:left}
-th{color:var(--muted);font-weight:500;font-size:.78rem}
-.slots{display:grid;gap:8px}
-.slot{display:grid;grid-template-columns:58px 1fr 72px;align-items:center;gap:8px;font-size:.85rem}
-.slot .bar{position:relative;height:16px;background:var(--soft);border-radius:4px}
-.slot .bar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
-.slot .bar i{position:absolute;top:2px;bottom:2px;border-radius:3px}
-.slot .v{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}
-.takeaway{background:var(--soft);border-radius:8px;padding:12px;font-size:.92rem;display:grid;gap:4px}
-.tap{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--muted);user-select:none;-webkit-user-select:none;touch-action:manipulation;cursor:pointer}
-.tap:active{background:var(--soft)}
-@media (max-width:420px){.big{font-size:2.6rem}.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.stat b{font-size:1.15rem}}
-@media (prefers-reduced-motion:reduce){.meter .needle,.beats span{transition:none}}
+th{color:var(--muted);font-weight:500;font-size:.76rem}
+.fingers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.fhand{display:grid;gap:6px;min-width:0}
+.frow{display:grid;grid-template-columns:2.2em 1fr 1fr;gap:6px;align-items:center;font-size:.8rem}
+.frow.head{color:var(--muted);font-size:.72rem}
+.mini{position:relative;height:14px;background:var(--soft);border-radius:3px}
+.mini::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.mini i{position:absolute;top:2px;bottom:2px;border-radius:2px}
+.mini span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--f-num);font-size:.68rem;color:var(--ink)}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:14px;display:grid;gap:8px;text-align:center}
+.history td.best{color:var(--good);font-weight:700}
+@media (max-width:460px){.fingers{grid-template-columns:1fr}.total{font-size:2.8rem}.readout b{font-size:1.1rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
-</head>
-<body>
 
 <div class="wrap">
   <header>
     <div>
-      <h1>哈農節拍檢查</h1>
-      <p class="sub">接上電鋼琴，跟著節拍器彈，看每個音是搶拍還是拖拍</p>
+      <h1>哈農練習評分</h1>
+      <p class="sub">內建第 1–20 條，跟著節拍器彈，檢查音、拍子、力度與連奏</p>
     </div>
     <span id="midiChip" class="chip">尚未連接 MIDI</span>
   </header>
 
   <section aria-labelledby="setH">
     <h2 id="setH">練習設定</h2>
+    <label class="f">練習曲目
+      <select id="exSel"></select>
+    </label>
+    <div class="grid2">
+      <div class="f">範圍
+        <div class="seg" id="rangeSeg" role="group" aria-label="範圍">
+          <button type="button" data-v="all">全曲</button><button type="button" data-v="up">上行</button><button type="button" data-v="down">下行</button>
+        </div>
+      </div>
+      <div class="f">手
+        <div class="seg" id="handSeg" role="group" aria-label="手">
+          <button type="button" data-v="both">雙手</button><button type="button" data-v="R">右手</button><button type="button" data-v="L">左手</button>
+        </div>
+      </div>
+    </div>
     <div class="grid2">
       <label class="f">速度（四分音符 BPM）
         <div class="stepper">
           <button type="button" data-step="-4" aria-label="減慢">−</button>
-          <input id="bpm" type="number" inputmode="numeric" min="30" max="200" value="60">
+          <input id="bpm" type="number" inputmode="numeric" min="30" max="160" value="60">
           <button type="button" data-step="4" aria-label="加快">+</button>
         </div>
       </label>
-      <label class="f">長度（小節，4/4 拍）
-        <div class="stepper">
-          <button type="button" data-bars="-1" aria-label="減少小節">−</button>
-          <input id="bars" type="number" inputmode="numeric" min="1" max="64" value="8">
-          <button type="button" data-bars="1" aria-label="增加小節">+</button>
-        </div>
+      <label class="f">節拍器音色
+        <select id="sound"><option value="wood">木魚</option><option value="stick">鼓棒</option><option value="soft">柔和</option><option value="off">不要節拍器</option></select>
       </label>
     </div>
-    <div class="f" style="display:grid;gap:6px;font-size:.85rem;color:var(--muted)">
-      音符時值（每拍幾個音）
-      <div class="seg" id="subSeg" role="group" aria-label="音符時值">
-        <button type="button" data-sub="2" aria-pressed="false">八分音符 ×2</button>
-        <button type="button" data-sub="3" aria-pressed="false">三連音 ×3</button>
-        <button type="button" data-sub="4" aria-pressed="true">十六分 ×4</button>
+    <p class="hint">哈農原書建議速度 60–108。先用 60 彈到分數穩定在 85 以上，再每次加 4。</p>
+    <details>
+      <summary>進階設定與延遲校正</summary>
+      <div class="adv">
+        <div class="grid2">
+          <label class="f">拍子合格範圍
+            <select id="tol"><option value="15">±15 ms（嚴格）</option><option value="25">±25 ms（標準）</option><option value="40">±40 ms（寬鬆）</option></select>
+          </label>
+          <label class="f">延遲補償（ms）
+            <div class="stepper">
+              <button type="button" data-lat="-5" aria-label="減少補償">−</button>
+              <input id="lat" type="number" inputmode="numeric" value="0">
+              <button type="button" data-lat="5" aria-label="增加補償">+</button>
+            </div>
+          </label>
+        </div>
+        <div class="row" style="justify-content:space-between">
+          <label class="toggle"><input id="subClick" type="checkbox"> 節拍器也敲十六分音</label>
+          <button type="button" class="btn" id="calBtn">校正延遲</button>
+        </div>
+        <p class="hint" id="calHint">校正：跟著 8 下節拍器，每下彈一個音，手機的聲音延遲就會被扣掉。換手機或耳機後請重新校正。</p>
       </div>
-    </div>
-    <div class="grid2">
-      <label class="f">合格範圍
-        <select id="tol">
-          <option value="15">±15 ms（嚴格）</option>
-          <option value="25" selected>±25 ms（標準）</option>
-          <option value="40">±40 ms（寬鬆）</option>
-        </select>
-      </label>
-      <label class="f">延遲補償（ms）
-        <div class="stepper">
-          <button type="button" data-lat="-5" aria-label="減少補償">−</button>
-          <input id="lat" type="number" inputmode="numeric" value="0">
-          <button type="button" data-lat="5" aria-label="增加補償">+</button>
-        </div>
-      </label>
-    </div>
-    <div class="row" style="justify-content:space-between">
-      <label class="toggle"><input id="subClick" type="checkbox"> 節拍器也敲細分音</label>
-      <button type="button" class="btn" id="calBtn">校正延遲</button>
-    </div>
-    <p class="hint" id="calHint">第一次使用請先按「校正延遲」：跟著 8 下節拍器，每下彈一個音，手機的聲音延遲就會被扣掉。</p>
+    </details>
   </section>
 
-  <section class="live" aria-live="polite">
-    <div class="beats" id="beats"><span></span><span></span><span></span><span></span></div>
-    <div class="big" id="bigNum">—</div>
-    <div class="verdict" id="verdict">&nbsp;</div>
-    <div>
-      <div class="meter" id="meter"><div class="zone" id="zone"></div><div class="mid"></div><div class="needle" id="needle"></div></div>
-      <div class="meterlbl"><span class="e">← 搶拍（早）</span><span class="l">拖拍（晚）→</span></div>
+  <section aria-labelledby="playH">
+    <h2 id="playH">彈奏</h2>
+    <div class="rollbox"><canvas id="roll" aria-label="鋼琴捲簾：上方右手、下方左手"></canvas></div>
+    <div class="legend">
+      <span><i style="background:var(--rh);opacity:.35"></i>待彈（數字是指法）</span>
+      <span><i style="background:var(--good)"></i>準</span><span><i style="background:var(--early)"></i>搶拍</span><span><i style="background:var(--late)"></i>拖拍</span>
+      <span><i style="border:2px solid var(--bad);background:transparent"></i>漏彈</span><span><i style="background:var(--bad);border-radius:50%;width:8px"></i>錯音／多彈</span>
+    </div>
+    <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="回放位置" hidden>
+    <div class="readout" aria-live="polite">
+      <div><b id="rOff">—</b><small>最後一音</small></div>
+      <div><b id="rHit" class="g">0</b><small>正確</small></div>
+      <div><b id="rMiss" class="x">0</b><small>漏彈</small></div>
+      <div><b id="rExtra" class="x">0</b><small>錯／多</small></div>
     </div>
     <div class="progress"><i id="prog"></i></div>
-    <div class="status" id="status">按開始後會先數一小節（4 下），再開始記錄。</div>
+    <div class="status" id="status">接上琴後按開始，會先數 4 下再開始。</div>
     <button type="button" class="btn primary" id="startBtn">開始</button>
-    <div class="tap" id="tap" role="button" tabindex="0" hidden>沒有 MIDI 時，可以點這裡或按空白鍵代替彈奏</div>
   </section>
 
   <section aria-labelledby="repH">
-    <h2 id="repH">本次結果<span class="badge" id="sampleBadge">範例資料</span></h2>
-    <div class="takeaway" id="takeaway"></div>
-    <div class="stats">
-      <div class="stat"><small>整體傾向</small><b id="sMean">—</b></div>
-      <div class="stat"><small>穩定度（標準差）</small><b id="sSd">—</b></div>
-      <div class="stat"><small>合格比例</small><b id="sIn">—</b></div>
+    <h2 id="repH">評分結果 <span class="badge" id="sampleBadge">範例資料</span> <span id="repMeta" style="letter-spacing:0"></span></h2>
+    <div class="scorehead">
+      <div><div class="total" id="tScore">—<small>/100</small></div><div class="grade" id="tGrade"></div></div>
+      <div class="parts" id="parts"></div>
     </div>
-    <div class="canvasbox"><canvas id="chart" aria-label="每個音的偏移量"></canvas></div>
-    <div class="legend"><span><i style="background:var(--lh)"></i>左手</span><span><i style="background:var(--rh)"></i>右手</span><span><i style="background:var(--muted)"></i>單音／點擊</span><span>綠色帶 = 合格範圍</span></div>
-    <div style="overflow-x:auto">
+    <div class="takeaway" id="takeaway"></div>
+    <div class="tablebox">
       <table>
-        <thead><tr><th>手</th><th>音數</th><th>平均偏移</th><th>標準差</th><th>合格</th></tr></thead>
+        <thead><tr><th>手</th><th>正確</th><th>漏</th><th>拍子平均</th><th>拍子穩定</th><th>力度差異</th><th>連奏良好</th></tr></thead>
         <tbody id="handRows"></tbody>
       </table>
     </div>
-    <h2>每拍內的位置</h2>
-    <div class="slots" id="slots"></div>
-    <p class="hint" id="syncLine"></p>
-    <p class="hint">正數代表比節拍器晚、負數代表早。左右手是用「同時彈下的兩個音，低的算左手、高的算右手」判斷，所以兩手要一起彈才分得開。</p>
+    <h3>各指表現</h3>
+    <p class="hint">左邊是拍子（中線 = 準，往左早、往右晚），右邊是力度（中線 = 這隻手的平均，往左弱、往右強）。</p>
+    <div class="fingers" id="fingers"></div>
+    <h3>連奏（放開時間）</h3>
+    <p class="hint" id="legatoLine"></p>
+    <h3>這條的紀錄</h3>
+    <div class="tablebox"><table class="history"><thead><tr><th>時間</th><th>速度</th><th>範圍</th><th>總分</th><th>音</th><th>拍子</th><th>力度</th><th>連奏</th></tr></thead><tbody id="histRows"></tbody></table></div>
+  </section>
+
+  <section aria-labelledby="impH">
+    <h2 id="impH">第 21–60 條：匯入 MIDI</h2>
+    <p class="hint">內建的 1–20 條取自公版的 Mutopia 樂譜（含指法）。第 21–60 條沒有可靠的公版電子譜，請從 MuseScore 等網站下載該條的 MIDI 檔（.mid）再匯入，就能用同樣的方式評分；匯入的曲子不含指法，所以不會有「各指表現」。</p>
+    <div class="drop">
+      <label class="btn" for="midiFile" style="justify-self:center">選擇 MIDI 檔匯入</label>
+      <input type="file" id="midiFile" accept=".mid,.midi,audio/midi,audio/x-midi" hidden>
+      <span class="hint" id="impMsg">匯入後會出現在「練習曲目」的「我匯入的」底下，存在這支手機的瀏覽器裡。</span>
+    </div>
+    <button type="button" class="btn danger" id="delImp" hidden>刪除目前選的匯入曲目</button>
   </section>
 </div>
 
 <script>
+const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3],[3,55,1,4],[4,57,1,5],[5,55,1,4],[6,53,1,3],[7,52,1,2],[8,50,1,1],[9,53,1,2],[10,55,1,3],[11,57,1,4],[12,59,1,5],[13,57,1,4],[14,55,1,3],[15,53,1,2],[16,52,1,1],[17,55,1,2],[18,57,1,3],[19,59,1,4],[20,60,1,5],[21,59,1,4],[22,57,1,3],[23,55,1,2],[24,53,1,1],[25,57,1,2],[26,59,1,3],[27,60,1,4],[28,62,1,5],[29,60,1,4],[30,59,1,3],[31,57,1,2],[32,55,1,1],[33,59,1,2],[34,60,1,3],[35,62,1,4],[36,64,1,5],[37,62,1,4],[38,60,1,3],[39,59,1,2],[40,57,1,1],[41,60,1,2],[42,62,1,3],[43,64,1,4],[44,65,1,5],[45,64,1,4],[46,62,1,3],[47,60,1,2],[48,59,1,1],[49,62,1,2],[50,64,1,3],[51,65,1,4],[52,67,1,5],[53,65,1,4],[54,64,1,3],[55,62,1,2],[56,60,1,1],[57,64,1,2],[58,65,1,3],[59,67,1,4],[60,69,1,5],[61,67,1,4],[62,65,1,3],[63,64,1,2],[64,62,1,1],[65,65,1,2],[66,67,1,3],[67,69,1,4],[68,71,1,5],[69,69,1,4],[70,67,1,3],[71,65,1,2],[72,64,1,1],[73,67,1,2],[74,69,1,3],[75,71,1,4],[76,72,1,5],[77,71,1,4],[78,69,1,3],[79,67,1,2],[80,65,1,1],[81,69,1,2],[82,71,1,3],[83,72,1,4],[84,74,1,5],[85,72,1,4],[86,71,1,3],[87,69,1,2],[88,67,1,1],[89,71,1,3],[90,72,1,4],[91,74,1,5],[92,76,1,5],[93,74,1,5],[94,72,1,4],[95,71,1,3],[96,69,1,2],[97,72,1,4],[98,74,1,5],[99,76,1,5],[100,77,1,5],[101,76,1,5],[102,74,1,4],[103,72,1,3],[104,71,1,2],[105,74,1,4],[106,76,1,5],[107,77,1,5],[108,79,1,5],[109,77,1,5],[110,76,1,4],[111,74,1,3],[112,79,1,5],[113,76,1,4],[114,74,1,3],[115,72,1,2],[116,71,1,1],[117,72,1,2],[118,74,1,3],[119,76,1,4],[120,77,1,5],[121,74,1,4],[122,72,1,3],[123,71,1,2],[124,69,1,1],[125,71,1,2],[126,72,1,3],[127,74,1,4],[128,76,1,5],[129,72,1,4],[130,71,1,3],[131,69,1,2],[132,67,1,1],[133,69,1,2],[134,71,1,3],[135,72,1,4],[136,74,1,5],[137,71,1,4],[138,69,1,3],[139,67,1,2],[140,65,1,1],[141,67,1,2],[142,69,1,3],[143,71,1,4],[144,72,1,5],[145,69,1,4],[146,67,1,3],[147,65,1,2],[148,64,1,1],[149,65,1,2],[150,67,1,3],[151,69,1,4],[152,71,1,5],[153,67,1,4],[154,65,1,3],[155,64,1,2],[156,62,1,1],[157,64,1,2],[158,65,1,3],[159,67,1,4],[160,69,1,5],[161,65,1,4],[162,64,1,3],[163,62,1,2],[164,60,1,1],[165,62,1,2],[166,64,1,3],[167,65,1,4],[168,67,1,5],[169,64,1,4],[170,62,1,3],[171,60,1,2],[172,59,1,1],[173,60,1,2],[174,62,1,3],[175,64,1,4],[176,65,1,5],[177,62,1,4],[178,60,1,3],[179,59,1,2],[180,57,1,1],[181,59,1,2],[182,60,1,3],[183,62,1,4],[184,64,1,5],[185,60,1,4],[186,59,1,3],[187,57,1,2],[188,55,1,1],[189,57,1,2],[190,59,1,3],[191,60,1,4],[192,62,1,5],[193,59,1,4],[194,57,1,3],[195,55,1,2],[196,53,1,1],[197,55,1,2],[198,57,1,3],[199,59,1,4],[200,60,1,5],[201,57,1,4],[202,55,1,3],[203,53,1,2],[204,52,1,1],[205,53,1,2],[206,55,1,3],[207,57,1,4],[208,59,1,5],[209,55,1,4],[210,53,1,3],[211,52,1,2],[212,50,1,1],[213,52,1,2],[214,53,1,3],[215,55,1,4],[216,57,1,5],[217,53,1,4],[218,52,1,3],[219,50,1,2],[220,48,1,1],[221,50,1,2],[222,52,1,3],[223,53,1,4],[224,55,1,5],[225,52,1,4],[226,50,1,3],[227,48,1,2],[228,47,1,1],[229,48,1,2],[230,50,1,3],[231,52,1,4],[232,48,8,0]],"L":[[0,36,1,5],[1,40,1,4],[2,41,1,3],[3,43,1,2],[4,45,1,1],[5,43,1,2],[6,41,1,3],[7,40,1,4],[8,38,1,5],[9,41,1,4],[10,43,1,3],[11,45,1,2],[12,47,1,1],[13,45,1,2],[14,43,1,3],[15,41,1,4],[16,40,1,5],[17,43,1,4],[18,45,1,3],[19,47,1,2],[20,48,1,1],[21,47,1,2],[22,45,1,3],[23,43,1,4],[24,41,1,5],[25,45,1,4],[26,47,1,3],[27,48,1,2],[28,50,1,1],[29,48,1,2],[30,47,1,3],[31,45,1,4],[32,43,1,5],[33,47,1,4],[34,48,1,3],[35,50,1,2],[36,52,1,1],[37,50,1,2],[38,48,1,3],[39,47,1,4],[40,45,1,5],[41,48,1,4],[42,50,1,3],[43,52,1,2],[44,53,1,1],[45,52,1,2],[46,50,1,3],[47,48,1,4],[48,47,1,5],[49,50,1,4],[50,52,1,3],[51,53,1,2],[52,55,1,1],[53,53,1,2],[54,52,1,3],[55,50,1,4],[56,48,1,5],[57,52,1,4],[58,53,1,3],[59,55,1,2],[60,57,1,1],[61,55,1,2],[62,53,1,3],[63,52,1,4],[64,50,1,5],[65,53,1,4],[66,55,1,3],[67,57,1,2],[68,59,1,1],[69,57,1,2],[70,55,1,3],[71,53,1,4],[72,52,1,5],[73,55,1,4],[74,57,1,3],[75,59,1,2],[76,60,1,1],[77,59,1,2],[78,57,1,3],[79,55,1,4],[80,53,1,5],[81,57,1,4],[82,59,1,3],[83,60,1,2],[84,62,1,1],[85,60,1,2],[86,59,1,3],[87,57,1,4],[88,55,1,5],[89,59,1,3],[90,60,1,2],[91,62,1,1],[92,64,1,1],[93,62,1,1],[94,60,1,2],[95,59,1,3],[96,57,1,4],[97,60,1,2],[98,62,1,1],[99,64,1,1],[100,65,1,1],[101,64,1,1],[102,62,1,2],[103,60,1,3],[104,59,1,4],[105,62,1,2],[106,64,1,1],[107,65,1,1],[108,67,1,1],[109,65,1,1],[110,64,1,2],[111,62,1,3],[112,67,1,1],[113,64,1,2],[114,62,1,3],[115,60,1,4],[116,59,1,5],[117,60,1,4],[118,62,1,3],[119,64,1,2],[120,65,1,1],[121,62,1,2],[122,60,1,3],[123,59,1,4],[124,57,1,5],[125,59,1,4],[126,60,1,3],[127,62,1,2],[128,64,1,1],[129,60,1,2],[130,59,1,3],[131,57,1,4],[132,55,1,5],[133,57,1,4],[134,59,1,3],[135,60,1,2],[136,62,1,1],[137,59,1,2],[138,57,1,3],[139,55,1,4],[140,53,1,5],[141,55,1,4],[142,57,1,3],[143,59,1,2],[144,60,1,1],[145,57,1,2],[146,55,1,3],[147,53,1,4],[148,52,1,5],[149,53,1,4],[150,55,1,3],[151,57,1,2],[152,59,1,1],[153,55,1,2],[154,53,1,3],[155,52,1,4],[156,50,1,5],[157,52,1,4],[158,53,1,3],[159,55,1,2],[160,57,1,1],[161,53,1,2],[162,52,1,3],[163,50,1,4],[164,48,1,5],[165,50,1,4],[166,52,1,3],[167,53,1,2],[168,55,1,1],[169,52,1,2],[170,50,1,3],[171,48,1,4],[172,47,1,5],[173,48,1,4],[174,50,1,3],[175,52,1,2],[176,53,1,1],[177,50,1,2],[178,48,1,3],[179,47,1,4],[180,45,1,5],[181,47,1,4],[182,48,1,3],[183,50,1,2],[184,52,1,1],[185,48,1,2],[186,47,1,3],[187,45,1,4],[188,43,1,5],[189,45,1,4],[190,47,1,3],[191,48,1,2],[192,50,1,1],[193,47,1,2],[194,45,1,3],[195,43,1,4],[196,41,1,5],[197,43,1,4],[198,45,1,3],[199,47,1,2],[200,48,1,1],[201,45,1,2],[202,43,1,3],[203,41,1,4],[204,40,1,5],[205,41,1,4],[206,43,1,3],[207,45,1,2],[208,47,1,1],[209,43,1,2],[210,41,1,3],[211,40,1,4],[212,38,1,5],[213,40,1,4],[214,41,1,3],[215,43,1,2],[216,45,1,1],[217,41,1,2],[218,40,1,3],[219,38,1,4],[220,36,1,5],[221,38,1,4],[222,40,1,3],[223,41,1,2],[224,43,1,1],[225,40,1,2],[226,38,1,3],[227,36,1,4],[228,35,1,5],[229,36,1,4],[230,38,1,3],[231,40,1,2],[232,36,8,0]]},{"n":2,"len":232,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,57,1,5],[3,55,1,4],[4,53,1,3],[5,55,1,4],[6,53,1,3],[7,52,1,2],[8,50,1,1],[9,53,1,2],[10,59,1,5],[11,57,1,4],[12,55,1,3],[13,57,1,4],[14,55,1,3],[15,53,1,2],[16,52,1,1],[17,55,1,2],[18,60,1,5],[19,59,1,4],[20,57,1,3],[21,59,1,4],[22,57,1,3],[23,55,1,2],[24,53,1,1],[25,57,1,2],[26,62,1,5],[27,60,1,4],[28,59,1,3],[29,60,1,4],[30,59,1,3],[31,57,1,2],[32,55,1,1],[33,59,1,2],[34,64,1,5],[35,62,1,4],[36,60,1,3],[37,62,1,4],[38,60,1,3],[39,59,1,2],[40,57,1,1],[41,60,1,2],[42,65,1,5],[43,64,1,4],[44,62,1,3],[45,64,1,4],[46,62,1,3],[47,60,1,2],[48,59,1,1],[49,62,1,2],[50,67,1,5],[51,65,1,4],[52,64,1,3],[53,65,1,4],[54,64,1,3],[55,62,1,2],[56,60,1,1],[57,64,1,2],[58,69,1,5],[59,67,1,4],[60,65,1,3],[61,67,1,4],[62,65,1,3],[63,64,1,2],[64,62,1,1],[65,65,1,2],[66,71,1,5],[67,69,1,4],[68,67,1,3],[69,69,1,4],[70,67,1,3],[71,65,1,2],[72,64,1,1],[73,67,1,2],[74,72,1,5],[75,71,1,4],[76,69,1,3],[77,71,1,4],[78,69,1,3],[79,67,1,2],[80,65,1,1],[81,69,1,2],[82,74,1,5],[83,72,1,4],[84,71,1,3],[85,72,1,4],[86,71,1,3],[87,69,1,2],[88,67,1,1],[89,71,1,2],[90,76,1,5],[91,74,1,4],[92,72,1,3],[93,74,1,4],[94,72,1,3],[95,71,1,2],[96,69,1,1],[97,72,1,2],[98,77,1,5],[99,76,1,4],[100,74,1,3],[101,76,1,4],[102,74,1,3],[103,72,1,2],[104,71,1,1],[105,74,1,2],[106,79,1,5],[107,77,1,4],[108,76,1,3],[109,77,1,4],[110,76,1,3],[111,74,1,2],[112,79,1,5],[113,74,1,2],[114,71,1,1],[115,72,1,2],[116,74,1,3],[117,72,1,2],[118,74,1,3],[119,76,1,4],[120,77,1,5],[121,72,1,2],[122,69,1,1],[123,71,1,2],[124,72,1,3],[125,71,1,2],[126,72,1,3],[127,74,1,4],[128,76,1,5],[129,71,1,2],[130,67,1,1],[131,69,1,2],[132,71,1,3],[133,69,1,2],[134,71,1,3],[135,72,1,4],[136,74,1,5],[137,69,1,2],[138,65,1,1],[139,67,1,2],[140,69,1,3],[141,67,1,2],[142,69,1,3],[143,71,1,4],[144,72,1,5],[145,67,1,2],[146,64,1,1],[147,65,1,2],[148,67,1,3],[149,65,1,2],[150,67,1,3],[151,69,1,4],[152,71,1,5],[153,65,1,2],[154,62,1,1],[155,64,1,2],[156,65,1,3],[157,64,1,2],[158,65,1,3],[159,67,1,4],[160,69,1,5],[161,64,1,2],[162,60,1,1],[163,62,1,2],[164,64,1,3],[165,62,1,2],[166,64,1,3],[167,65,1,4],[168,67,1,5],[169,62,1,2],[170,59,1,1],[171,60,1,2],[172,62,1,3],[173,60,1,2],[174,62,1,3],[175,64,1,4],[176,65,1,5],[177,60,1,2],[178,57,1,1],[179,59,1,2],[180,60,1,3],[181,59,1,2],[182,60,1,3],[183,62,1,4],[184,64,1,5],[185,59,1,2],[186,55,1,1],[187,57,1,1],[188,59,1,2],[189,57,1,1],[190,59,1,2],[191,60,1,3],[192,62,1,5],[193,57,1,2],[194,53,1,1],[195,55,1,1],[196,57,1,2],[197,55,1,1],[198,57,1,2],[199,59,1,3],[200,60,1,5],[201,55,1,2],[202,52,1,1],[203,53,1,1],[204,55,1,2],[205,53,1,1],[206,55,1,2],[207,57,1,3],[208,59,1,5],[209,53,1,2],[210,50,1,1],[211,52,1,1],[212,53,1,2],[213,52,1,1],[214,53,1,2],[215,55,1,3],[216,57,1,5],[217,52,1,2],[218,48,1,1],[219,50,1,1],[220,52,1,2],[221,50,1,1],[222,52,1,2],[223,53,1,3],[224,48,8,0]],"L":[[0,36,1,5],[1,40,1,3],[2,45,1,1],[3,43,1,2],[4,41,1,3],[5,43,1,2],[6,41,1,3],[7,40,1,4],[8,38,1,5],[9,41,1,3],[10,47,1,1],[11,45,1,2],[12,43,1,3],[13,45,1,2],[14,43,1,3],[15,41,1,4],[16,40,1,5],[17,43,1,3],[18,48,1,1],[19,47,1,2],[20,45,1,3],[21,47,1,2],[22,45,1,3],[23,43,1,4],[24,41,1,5],[25,45,1,3],[26,50,1,1],[27,48,1,2],[28,47,1,3],[29,48,1,2],[30,47,1,3],[31,45,1,4],[32,43,1,5],[33,47,1,3],[34,52,1,1],[35,50,1,1],[36,48,1,2],[37,50,1,1],[38,48,1,2],[39,47,1,3],[40,45,1,5],[41,48,1,3],[42,53,1,1],[43,52,1,1],[44,50,1,2],[45,52,1,1],[46,50,1,2],[47,48,1,3],[48,47,1,5],[49,50,1,3],[50,55,1,1],[51,53,1,1],[52,52,1,2],[53,53,1,1],[54,52,1,2],[55,50,1,3],[56,48,1,5],[57,52,1,3],[58,57,1,1],[59,55,1,1],[60,53,1,2],[61,55,1,1],[62,53,1,2],[63,52,1,3],[64,50,1,5],[65,53,1,3],[66,59,1,1],[67,57,1,1],[68,55,1,2],[69,57,1,1],[70,55,1,2],[71,53,1,3],[72,52,1,5],[73,55,1,3],[74,60,1,1],[75,59,1,1],[76,57,1,2],[77,59,1,1],[78,57,1,2],[79,55,1,3],[80,53,1,5],[81,57,1,3],[82,62,1,1],[83,60,1,1],[84,59,1,2],[85,60,1,1],[86,59,1,2],[87,57,1,3],[88,55,1,5],[89,59,1,3],[90,64,1,1],[91,62,1,1],[92,60,1,2],[93,62,1,1],[94,60,1,2],[95,59,1,3],[96,57,1,5],[97,60,1,3],[98,65,1,1],[99,64,1,1],[100,62,1,2],[101,64,1,1],[102,62,1,2],[103,60,1,3],[104,59,1,5],[105,62,1,3],[106,67,1,1],[107,65,1,1],[108,64,1,2],[109,65,1,1],[110,64,1,2],[111,62,1,3],[112,67,1,1],[113,62,1,3],[114,59,1,5],[115,60,1,4],[116,62,1,3],[117,60,1,4],[118,62,1,3],[119,64,1,2],[120,65,1,1],[121,60,1,3],[122,57,1,5],[123,59,1,4],[124,60,1,3],[125,59,1,4],[126,60,1,3],[127,62,1,2],[128,64,1,1],[129,59,1,3],[130,55,1,5],[131,57,1,4],[132,59,1,3],[133,57,1,4],[134,59,1,3],[135,60,1,2],[136,62,1,1],[137,57,1,3],[138,53,1,5],[139,55,1,4],[140,57,1,3],[141,55,1,4],[142,57,1,3],[143,59,1,2],[144,60,1,1],[145,55,1,3],[146,52,1,5],[147,53,1,4],[148,55,1,3],[149,53,1,4],[150,55,1,3],[151,57,1,2],[152,59,1,1],[153,53,1,3],[154,50,1,5],[155,52,1,4],[156,53,1,3],[157,52,1,4],[158,53,1,3],[159,55,1,2],[160,57,1,1],[161,52,1,3],[162,48,1,5],[163,50,1,4],[164,52,1,3],[165,50,1,4],[166,52,1,3],[167,53,1,2],[168,55,1,1],[169,50,1,3],[170,47,1,5],[171,48,1,4],[172,50,1,3],[173,48,1,4],[174,50,1,3],[175,52,1,2],[176,53,1,1],[177,48,1,3],[178,45,1,5],[179,47,1,4],[180,48,1,3],[181,47,1,4],[182,48,1,3],[183,50,1,2],[184,52,1,1],[185,47,1,3],[186,43,1,5],[187,45,1,4],[188,47,1,3],[189,45,1,4],[190,47,1,3],[191,48,1,2],[192,50,1,1],[193,45,1,3],[194,41,1,5],[195,43,1,4],[196,45,1,3],[197,43,1,4],[198,45,1,3],[199,47,1,2],[200,48,1,1],[201,43,1,3],[202,40,1,5],[203,41,1,4],[204,43,1,3],[205,41,1,4],[206,43,1,3],[207,45,1,2],[208,47,1,1],[209,41,1,3],[210,38,1,5],[211,40,1,4],[212,41,1,3],[213,40,1,4],[214,41,1,3],[215,43,1,2],[216,45,1,1],[217,40,1,3],[218,36,1,5],[219,38,1,4],[220,40,1,3],[221,38,1,4],[222,40,1,3],[223,41,1,2],[224,36,8,0]]},{"n":3,"len":232,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,57,1,5],[3,55,1,4],[4,53,1,3],[5,52,1,2],[6,53,1,3],[7,55,1,4],[8,50,1,1],[9,53,1,2],[10,59,1,5],[11,57,1,4],[12,55,1,3],[13,53,1,2],[14,55,1,3],[15,57,1,4],[16,52,1,1],[17,55,1,2],[18,60,1,5],[19,59,1,4],[20,57,1,3],[21,55,1,2],[22,57,1,3],[23,59,1,4],[24,53,1,1],[25,57,1,2],[26,62,1,5],[27,60,1,4],[28,59,1,3],[29,57,1,2],[30,59,1,3],[31,60,1,4],[32,55,1,1],[33,59,1,2],[34,64,1,5],[35,62,1,4],[36,60,1,3],[37,59,1,2],[38,60,1,3],[39,62,1,4],[40,57,1,1],[41,60,1,2],[42,65,1,5],[43,64,1,4],[44,62,1,3],[45,60,1,2],[46,62,1,3],[47,64,1,4],[48,59,1,1],[49,62,1,2],[50,67,1,5],[51,65,1,4],[52,64,1,3],[53,62,1,2],[54,64,1,3],[55,65,1,4],[56,60,1,1],[57,64,1,2],[58,69,1,5],[59,67,1,4],[60,65,1,3],[61,64,1,2],[62,65,1,3],[63,67,1,4],[64,62,1,1],[65,65,1,2],[66,71,1,5],[67,69,1,4],[68,67,1,3],[69,65,1,2],[70,67,1,3],[71,69,1,4],[72,64,1,1],[73,67,1,2],[74,72,1,5],[75,71,1,4],[76,69,1,3],[77,67,1,2],[78,69,1,3],[79,71,1,4],[80,65,1,1],[81,69,1,2],[82,74,1,5],[83,72,1,4],[84,71,1,3],[85,69,1,2],[86,71,1,3],[87,72,1,4],[88,67,1,1],[89,71,1,2],[90,76,1,5],[91,74,1,4],[92,72,1,3],[93,71,1,2],[94,72,1,3],[95,74,1,4],[96,69,1,1],[97,72,1,2],[98,77,1,5],[99,76,1,4],[100,74,1,3],[101,72,1,2],[102,74,1,3],[103,76,1,4],[104,71,1,1],[105,74,1,2],[106,79,1,5],[107,77,1,4],[108,76,1,3],[109,74,1,2],[110,76,1,3],[111,77,1,4],[112,79,1,5],[113,74,1,2],[114,71,1,1],[115,72,1,2],[116,74,1,3],[117,76,1,4],[118,74,1,3],[119,72,1,2],[120,77,1,5],[121,72,1,2],[122,69,1,1],[123,71,1,2],[124,72,1,3],[125,74,1,4],[126,72,1,3],[127,71,1,2],[128,76,1,5],[129,71,1,2],[130,67,1,1],[131,69,1,2],[132,71,1,3],[133,72,1,4],[134,71,1,3],[135,69,1,2],[136,74,1,5],[137,69,1,2],[138,65,1,1],[139,67,1,2],[140,69,1,3],[141,71,1,4],[142,69,1,3],[143,67,1,2],[144,72,1,5],[145,67,1,2],[146,64,1,1],[147,65,1,2],[148,67,1,3],[149,69,1,4],[150,67,1,3],[151,65,1,2],[152,71,1,5],[153,65,1,2],[154,62,1,1],[155,64,1,2],[156,65,1,3],[157,67,1,4],[158,65,1,3],[159,64,1,2],[160,69,1,5],[161,64,1,2],[162,60,1,1],[163,62,1,1],[164,64,1,2],[165,65,1,3],[166,64,1,2],[167,62,1,1],[168,67,1,5],[169,62,1,2],[170,59,1,1],[171,60,1,1],[172,62,1,2],[173,64,1,3],[174,62,1,2],[175,60,1,1],[176,65,1,5],[177,60,1,2],[178,57,1,1],[179,59,1,1],[180,60,1,2],[181,62,1,3],[182,60,1,2],[183,59,1,1],[184,64,1,5],[185,59,1,2],[186,55,1,1],[187,57,1,1],[188,59,1,2],[189,60,1,3],[190,59,1,2],[191,57,1,1],[192,62,1,5],[193,57,1,2],[194,53,1,1],[195,55,1,1],[196,57,1,2],[197,59,1,3],[198,57,1,2],[199,55,1,1],[200,60,1,5],[201,55,1,2],[202,52,1,1],[203,53,1,1],[204,55,1,2],[205,57,1,3],[206,55,1,2],[207,53,1,1],[208,59,1,5],[209,53,1,2],[210,50,1,1],[211,52,1,1],[212,53,1,2],[213,55,1,3],[214,53,1,2],[215,52,1,1],[216,57,1,5],[217,52,1,2],[218,48,1,1],[219,50,1,1],[220,52,1,2],[221,53,1,3],[222,52,1,2],[223,50,1,1],[224,48,8,0]],"L":[[0,36,1,5],[1,40,1,3],[2,45,1,1],[3,43,1,2],[4,41,1,3],[5,40,1,4],[6,41,1,3],[7,43,1,2],[8,38,1,5],[9,41,1,3],[10,47,1,1],[11,45,1,2],[12,43,1,3],[13,41,1,4],[14,43,1,3],[15,45,1,2],[16,40,1,5],[17,43,1,3],[18,48,1,1],[19,47,1,2],[20,45,1,3],[21,43,1,4],[22,45,1,3],[23,47,1,2],[24,41,1,5],[25,45,1,3],[26,50,1,1],[27,48,1,2],[28,47,1,3],[29,45,1,4],[30,47,1,3],[31,48,1,2],[32,43,1,5],[33,47,1,3],[34,52,1,1],[35,50,1,2],[36,48,1,3],[37,47,1,4],[38,48,1,3],[39,50,1,2],[40,45,1,5],[41,48,1,3],[42,53,1,1],[43,52,1,2],[44,50,1,3],[45,48,1,4],[46,50,1,3],[47,52,1,2],[48,47,1,5],[49,50,1,3],[50,55,1,1],[51,53,1,2],[52,52,1,3],[53,50,1,4],[54,52,1,3],[55,53,1,2],[56,48,1,5],[57,52,1,3],[58,57,1,1],[59,55,1,2],[60,53,1,3],[61,52,1,4],[62,53,1,3],[63,55,1,2],[64,50,1,5],[65,53,1,3],[66,59,1,1],[67,57,1,1],[68,55,1,2],[69,53,1,3],[70,55,1,2],[71,57,1,1],[72,52,1,5],[73,55,1,3],[74,60,1,1],[75,59,1,1],[76,57,1,2],[77,55,1,3],[78,57,1,2],[79,59,1,1],[80,53,1,5],[81,57,1,3],[82,62,1,1],[83,60,1,1],[84,59,1,2],[85,57,1,3],[86,59,1,2],[87,60,1,1],[88,55,1,5],[89,59,1,3],[90,64,1,1],[91,62,1,1],[92,60,1,2],[93,59,1,3],[94,60,1,2],[95,62,1,1],[96,57,1,5],[97,60,1,3],[98,65,1,1],[99,64,1,1],[100,62,1,2],[101,60,1,3],[102,62,1,2],[103,64,1,1],[104,59,1,5],[105,62,1,3],[106,67,1,1],[107,65,1,1],[108,64,1,2],[109,62,1,3],[110,64,1,2],[111,65,1,1],[112,67,1,1],[113,62,1,3],[114,59,1,5],[115,60,1,4],[116,62,1,3],[117,64,1,2],[118,62,1,3],[119,60,1,4],[120,65,1,1],[121,60,1,3],[122,57,1,5],[123,59,1,4],[124,60,1,3],[125,62,1,2],[126,60,1,3],[127,59,1,4],[128,64,1,1],[129,59,1,3],[130,55,1,5],[131,57,1,4],[132,59,1,3],[133,60,1,2],[134,59,1,3],[135,57,1,4],[136,62,1,1],[137,57,1,3],[138,53,1,5],[139,55,1,4],[140,57,1,3],[141,59,1,2],[142,57,1,3],[143,55,1,4],[144,60,1,1],[145,55,1,3],[146,52,1,5],[147,53,1,4],[148,55,1,3],[149,57,1,2],[150,55,1,3],[151,53,1,4],[152,59,1,1],[153,53,1,3],[154,50,1,5],[155,52,1,4],[156,53,1,3],[157,55,1,2],[158,53,1,3],[159,52,1,4],[160,57,1,1],[161,52,1,3],[162,48,1,5],[163,50,1,4],[164,52,1,3],[165,53,1,2],[166,52,1,3],[167,50,1,4],[168,55,1,1],[169,50,1,3],[170,47,1,5],[171,48,1,4],[172,50,1,3],[173,52,1,2],[174,50,1,3],[175,48,1,4],[176,53,1,1],[177,48,1,3],[178,45,1,5],[179,47,1,4],[180,48,1,3],[181,50,1,2],[182,48,1,3],[183,47,1,4],[184,52,1,1],[185,47,1,3],[186,43,1,5],[187,45,1,4],[188,47,1,3],[189,48,1,2],[190,47,1,3],[191,45,1,4],[192,50,1,1],[193,45,1,3],[194,41,1,5],[195,43,1,4],[196,45,1,3],[197,47,1,2],[198,45,1,3],[199,43,1,4],[200,48,1,1],[201,43,1,3],[202,40,1,5],[203,41,1,4],[204,43,1,3],[205,45,1,2],[206,43,1,3],[207,41,1,4],[208,47,1,1],[209,41,1,3],[210,38,1,5],[211,40,1,4],[212,41,1,3],[213,43,1,2],[214,41,1,3],[215,40,1,4],[216,45,1,1],[217,40,1,3],[218,36,1,5],[219,38,1,4],[220,40,1,3],[221,41,1,2],[222,40,1,3],[223,38,1,4],[224,36,8,0]]},{"n":4,"len":232,"split":112,"R":[[0,48,1,1],[1,50,1,2],[2,48,1,1],[3,52,1,2],[4,57,1,5],[5,55,1,4],[6,53,1,3],[7,52,1,2],[8,50,1,1],[9,52,1,2],[10,50,1,1],[11,53,1,2],[12,59,1,5],[13,57,1,4],[14,55,1,3],[15,53,1,2],[16,52,1,1],[17,53,1,2],[18,52,1,1],[19,55,1,3],[20,60,1,5],[21,59,1,5],[22,57,1,4],[23,55,1,3],[24,53,1,1],[25,55,1,2],[26,53,1,1],[27,57,1,3],[28,62,1,5],[29,60,1,5],[30,59,1,4],[31,57,1,3],[32,55,1,1],[33,57,1,2],[34,55,1,1],[35,59,1,3],[36,64,1,5],[37,62,1,5],[38,60,1,4],[39,59,1,3],[40,57,1,1],[41,59,1,2],[42,57,1,1],[43,60,1,3],[44,65,1,5],[45,64,1,5],[46,62,1,4],[47,60,1,3],[48,59,1,1],[49,60,1,2],[50,59,1,1],[51,62,1,3],[52,67,1,5],[53,65,1,5],[54,64,1,4],[55,62,1,3],[56,60,1,1],[57,62,1,2],[58,60,1,1],[59,64,1,3],[60,69,1,5],[61,67,1,5],[62,65,1,4],[63,64,1,3],[64,62,1,1],[65,64,1,2],[66,62,1,1],[67,65,1,3],[68,71,1,5],[69,69,1,5],[70,67,1,4],[71,65,1,3],[72,64,1,1],[73,65,1,2],[74,64,1,1],[75,67,1,3],[76,72,1,5],[77,71,1,5],[78,69,1,4],[79,67,1,3],[80,65,1,1],[81,67,1,2],[82,65,1,1],[83,69,1,3],[84,74,1,5],[85,72,1,5],[86,71,1,4],[87,69,1,3],[88,67,1,1],[89,69,1,2],[90,67,1,1],[91,71,1,3],[92,76,1,5],[93,74,1,5],[94,72,1,4],[95,71,1,3],[96,69,1,1],[97,71,1,2],[98,69,1,1],[99,72,1,3],[100,77,1,5],[101,76,1,5],[102,74,1,4],[103,72,1,3],[104,71,1,1],[105,72,1,2],[106,71,1,1],[107,74,1,3],[108,79,1,5],[109,77,1,5],[110,76,1,4],[111,74,1,3],[112,79,1,5],[113,77,1,4],[114,79,1,5],[115,74,1,2],[116,71,1,1],[117,72,1,2],[118,74,1,3],[119,76,1,4],[120,77,1,5],[121,76,1,4],[122,77,1,5],[123,72,1,2],[124,69,1,1],[125,71,1,2],[126,72,1,3],[127,74,1,4],[128,76,1,5],[129,74,1,4],[130,76,1,5],[131,71,1,2],[132,67,1,1],[133,69,1,1],[134,71,1,2],[135,72,1,3],[136,74,1,5],[137,72,1,4],[138,74,1,5],[139,69,1,2],[140,65,1,1],[141,67,1,1],[142,69,1,2],[143,71,1,3],[144,72,1,5],[145,71,1,4],[146,72,1,5],[147,67,1,2],[148,64,1,1],[149,65,1,1],[150,67,1,2],[151,69,1,3],[152,71,1,5],[153,69,1,4],[154,71,1,5],[155,65,1,2],[156,62,1,1],[157,64,1,1],[158,65,1,2],[159,67,1,3],[160,69,1,5],[161,67,1,4],[162,69,1,5],[163,64,1,2],[164,60,1,1],[165,62,1,1],[166,64,1,2],[167,65,1,3],[168,67,1,5],[169,65,1,4],[170,67,1,5],[171,62,1,2],[172,59,1,1],[173,60,1,1],[174,62,1,2],[175,64,1,3],[176,65,1,5],[177,64,1,4],[178,65,1,5],[179,60,1,2],[180,57,1,1],[181,59,1,1],[182,60,1,2],[183,62,1,3],[184,64,1,5],[185,62,1,4],[186,64,1,5],[187,59,1,2],[188,55,1,1],[189,57,1,1],[190,59,1,2],[191,60,1,3],[192,62,1,5],[193,60,1,4],[194,62,1,5],[195,57,1,2],[196,53,1,1],[197,55,1,1],[198,57,1,2],[199,59,1,3],[200,60,1,5],[201,59,1,4],[202,60,1,5],[203,55,1,2],[204,52,1,1],[205,53,1,1],[206,55,1,2],[207,57,1,3],[208,59,1,5],[209,57,1,4],[210,59,1,5],[211,53,1,2],[212,50,1,1],[213,52,1,1],[214,53,1,2],[215,55,1,3],[216,57,1,5],[217,55,1,4],[218,57,1,5],[219,52,1,2],[220,48,1,1],[221,50,1,1],[222,52,1,2],[223,53,1,3],[224,48,8,0]],"L":[[0,36,1,5],[1,38,1,4],[2,36,1,5],[3,40,1,3],[4,45,1,1],[5,43,1,2],[6,41,1,3],[7,40,1,4],[8,38,1,5],[9,40,1,4],[10,38,1,5],[11,41,1,3],[12,47,1,1],[13,45,1,2],[14,43,1,3],[15,41,1,4],[16,40,1,5],[17,41,1,4],[18,40,1,5],[19,43,1,3],[20,48,1,1],[21,47,1,1],[22,45,1,2],[23,43,1,3],[24,41,1,5],[25,43,1,4],[26,41,1,5],[27,45,1,3],[28,50,1,1],[29,48,1,1],[30,47,1,2],[31,45,1,3],[32,43,1,5],[33,45,1,4],[34,43,1,5],[35,47,1,3],[36,52,1,1],[37,50,1,1],[38,48,1,2],[39,47,1,3],[40,45,1,5],[41,47,1,4],[42,45,1,5],[43,48,1,3],[44,53,1,1],[45,52,1,1],[46,50,1,2],[47,48,1,3],[48,47,1,5],[49,48,1,4],[50,47,1,5],[51,50,1,3],[52,55,1,1],[53,53,1,1],[54,52,1,2],[55,50,1,3],[56,48,1,5],[57,50,1,4],[58,48,1,5],[59,52,1,3],[60,57,1,1],[61,55,1,1],[62,53,1,2],[63,52,1,3],[64,50,1,5],[65,52,1,4],[66,50,1,5],[67,53,1,3],[68,59,1,1],[69,57,1,1],[70,55,1,2],[71,53,1,3],[72,52,1,5],[73,53,1,4],[74,52,1,5],[75,55,1,3],[76,60,1,1],[77,59,1,1],[78,57,1,2],[79,55,1,3],[80,53,1,5],[81,55,1,4],[82,53,1,5],[83,57,1,3],[84,62,1,1],[85,60,1,1],[86,59,1,2],[87,57,1,3],[88,55,1,5],[89,57,1,4],[90,55,1,5],[91,59,1,3],[92,64,1,1],[93,62,1,1],[94,60,1,2],[95,59,1,3],[96,57,1,5],[97,59,1,4],[98,57,1,5],[99,60,1,3],[100,65,1,1],[101,64,1,1],[102,62,1,2],[103,60,1,3],[104,59,1,5],[105,60,1,4],[106,59,1,5],[107,62,1,3],[108,67,1,1],[109,65,1,1],[110,64,1,2],[111,62,1,3],[112,67,1,1],[113,65,1,2],[114,67,1,1],[115,62,1,3],[116,59,1,5],[117,60,1,4],[118,62,1,3],[119,64,1,2],[120,65,1,1],[121,64,1,2],[122,65,1,1],[123,60,1,3],[124,57,1,5],[125,59,1,4],[126,60,1,3],[127,62,1,2],[128,64,1,1],[129,62,1,2],[130,64,1,1],[131,59,1,4],[132,55,1,5],[133,57,1,5],[134,59,1,4],[135,60,1,3],[136,62,1,1],[137,60,1,2],[138,62,1,1],[139,57,1,4],[140,53,1,5],[141,55,1,5],[142,57,1,4],[143,59,1,3],[144,60,1,1],[145,59,1,2],[146,60,1,1],[147,55,1,4],[148,52,1,5],[149,53,1,5],[150,55,1,4],[151,57,1,3],[152,59,1,1],[153,57,1,2],[154,59,1,1],[155,53,1,4],[156,50,1,5],[157,52,1,5],[158,53,1,4],[159,55,1,3],[160,57,1,1],[161,55,1,2],[162,57,1,1],[163,52,1,4],[164,48,1,5],[165,50,1,5],[166,52,1,4],[167,53,1,3],[168,55,1,1],[169,53,1,2],[170,55,1,1],[171,50,1,4],[172,47,1,5],[173,48,1,5],[174,50,1,4],[175,52,1,3],[176,53,1,1],[177,52,1,2],[178,53,1,1],[179,48,1,4],[180,45,1,5],[181,47,1,5],[182,48,1,4],[183,50,1,3],[184,52,1,1],[185,50,1,2],[186,52,1,1],[187,47,1,4],[188,43,1,5],[189,45,1,5],[190,47,1,4],[191,48,1,3],[192,50,1,1],[193,48,1,2],[194,50,1,1],[195,45,1,4],[196,41,1,5],[197,43,1,5],[198,45,1,4],[199,47,1,3],[200,48,1,1],[201,47,1,2],[202,48,1,1],[203,43,1,4],[204,40,1,5],[205,41,1,5],[206,43,1,4],[207,45,1,3],[208,47,1,1],[209,45,1,2],[210,47,1,1],[211,41,1,4],[212,38,1,5],[213,40,1,5],[214,41,1,4],[215,43,1,3],[216,45,1,1],[217,43,1,2],[218,45,1,1],[219,40,1,4],[220,36,1,5],[221,38,1,5],[222,40,1,4],[223,41,1,3],[224,36,8,0]]},{"n":5,"len":232,"split":112,"R":[[0,48,1,1],[1,57,1,5],[2,55,1,4],[3,57,1,5],[4,53,1,3],[5,55,1,4],[6,52,1,2],[7,53,1,3],[8,50,1,1],[9,59,1,5],[10,57,1,4],[11,59,1,5],[12,55,1,3],[13,57,1,4],[14,53,1,2],[15,55,1,3],[16,52,1,1],[17,60,1,5],[18,59,1,5],[19,60,1,5],[20,57,1,4],[21,59,1,5],[22,55,1,3],[23,57,1,4],[24,53,1,1],[25,62,1,5],[26,60,1,5],[27,62,1,5],[28,59,1,4],[29,60,1,5],[30,57,1,3],[31,59,1,4],[32,55,1,1],[33,64,1,5],[34,62,1,5],[35,64,1,5],[36,60,1,4],[37,62,1,5],[38,59,1,3],[39,60,1,4],[40,57,1,1],[41,65,1,5],[42,64,1,5],[43,65,1,5],[44,62,1,4],[45,64,1,5],[46,60,1,3],[47,62,1,4],[48,59,1,1],[49,67,1,5],[50,65,1,5],[51,67,1,5],[52,64,1,4],[53,65,1,5],[54,62,1,3],[55,64,1,4],[56,60,1,1],[57,69,1,5],[58,67,1,5],[59,69,1,5],[60,65,1,4],[61,67,1,5],[62,64,1,3],[63,65,1,4],[64,62,1,1],[65,71,1,5],[66,69,1,5],[67,71,1,5],[68,67,1,4],[69,69,1,5],[70,65,1,3],[71,67,1,4],[72,64,1,1],[73,72,1,5],[74,71,1,5],[75,72,1,5],[76,69,1,4],[77,71,1,5],[78,67,1,3],[79,69,1,4],[80,65,1,1],[81,74,1,5],[82,72,1,5],[83,74,1,5],[84,71,1,4],[85,72,1,5],[86,69,1,3],[87,71,1,4],[88,67,1,1],[89,76,1,5],[90,74,1,5],[91,76,1,5],[92,72,1,4],[93,74,1,5],[94,71,1,3],[95,72,1,4],[96,69,1,1],[97,77,1,5],[98,76,1,5],[99,77,1,5],[100,74,1,4],[101,76,1,5],[102,72,1,3],[103,74,1,4],[104,71,1,1],[105,79,1,5],[106,77,1,5],[107,79,1,5],[108,76,1,4],[109,77,1,5],[110,74,1,3],[111,76,1,4],[112,72,1,1],[113,74,1,2],[114,72,1,1],[115,76,1,3],[116,74,1,2],[117,77,1,4],[118,76,1,3],[119,79,1,5],[120,71,1,1],[121,72,1,2],[122,71,1,1],[123,74,1,3],[124,72,1,2],[125,76,1,4],[126,74,1,3],[127,77,1,5],[128,69,1,1],[129,71,1,2],[130,69,1,1],[131,72,1,3],[132,71,1,2],[133,74,1,4],[134,72,1,3],[135,76,1,5],[136,67,1,1],[137,69,1,2],[138,67,1,1],[139,71,1,3],[140,69,1,2],[141,72,1,4],[142,71,1,3],[143,74,1,5],[144,65,1,1],[145,67,1,2],[146,65,1,1],[147,69,1,3],[148,67,1,2],[149,71,1,4],[150,69,1,3],[151,72,1,5],[152,64,1,1],[153,65,1,2],[154,64,1,1],[155,67,1,3],[156,65,1,2],[157,69,1,4],[158,67,1,3],[159,71,1,5],[160,62,1,1],[161,64,1,2],[162,62,1,1],[163,65,1,3],[164,64,1,2],[165,67,1,4],[166,65,1,3],[167,69,1,5],[168,60,1,1],[169,62,1,2],[170,60,1,1],[171,64,1,3],[172,62,1,2],[173,65,1,4],[174,64,1,3],[175,67,1,5],[176,59,1,1],[177,60,1,2],[178,59,1,1],[179,62,1,3],[180,60,1,2],[181,64,1,4],[182,62,1,3],[183,65,1,5],[184,57,1,1],[185,59,1,2],[186,57,1,1],[187,60,1,3],[188,59,1,2],[189,62,1,4],[190,60,1,3],[191,64,1,5],[192,55,1,1],[193,57,1,2],[194,55,1,1],[195,59,1,3],[196,57,1,2],[197,60,1,4],[198,59,1,3],[199,62,1,5],[200,53,1,1],[201,55,1,2],[202,53,1,1],[203,57,1,3],[204,55,1,2],[205,59,1,4],[206,57,1,3],[207,60,1,5],[208,52,1,1],[209,53,1,2],[210,52,1,1],[211,55,1,3],[212,53,1,2],[213,57,1,4],[214,55,1,3],[215,59,1,5],[216,50,1,1],[217,52,1,2],[218,50,1,1],[219,53,1,3],[220,52,1,2],[221,55,1,4],[222,53,1,3],[223,57,1,5],[224,48,8,0]],"L":[[0,36,1,5],[1,45,1,1],[2,43,1,2],[3,45,1,1],[4,41,1,3],[5,43,1,2],[6,40,1,4],[7,41,1,3],[8,38,1,5],[9,47,1,1],[10,45,1,2],[11,47,1,1],[12,43,1,3],[13,45,1,2],[14,41,1,4],[15,43,1,3],[16,40,1,5],[17,48,1,1],[18,47,1,1],[19,48,1,1],[20,45,1,2],[21,47,1,1],[22,43,1,3],[23,45,1,2],[24,41,1,5],[25,50,1,1],[26,48,1,1],[27,50,1,1],[28,47,1,2],[29,48,1,1],[30,45,1,3],[31,47,1,2],[32,43,1,5],[33,52,1,1],[34,50,1,1],[35,52,1,1],[36,48,1,2],[37,50,1,1],[38,47,1,3],[39,48,1,2],[40,45,1,5],[41,53,1,1],[42,52,1,1],[43,53,1,1],[44,50,1,2],[45,52,1,1],[46,48,1,3],[47,50,1,2],[48,47,1,5],[49,55,1,1],[50,53,1,1],[51,55,1,1],[52,52,1,2],[53,53,1,1],[54,50,1,3],[55,52,1,2],[56,48,1,5],[57,57,1,1],[58,55,1,1],[59,57,1,1],[60,53,1,2],[61,55,1,1],[62,52,1,3],[63,53,1,2],[64,50,1,5],[65,59,1,1],[66,57,1,1],[67,59,1,1],[68,55,1,2],[69,57,1,1],[70,53,1,3],[71,55,1,2],[72,52,1,5],[73,60,1,1],[74,59,1,1],[75,60,1,1],[76,57,1,2],[77,59,1,1],[78,55,1,3],[79,57,1,2],[80,53,1,5],[81,62,1,1],[82,60,1,1],[83,62,1,1],[84,59,1,2],[85,60,1,1],[86,57,1,3],[87,59,1,2],[88,55,1,5],[89,64,1,1],[90,62,1,1],[91,64,1,1],[92,60,1,2],[93,62,1,1],[94,59,1,3],[95,60,1,2],[96,57,1,5],[97,65,1,1],[98,64,1,1],[99,65,1,1],[100,62,1,2],[101,64,1,1],[102,60,1,3],[103,62,1,2],[104,59,1,5],[105,67,1,1],[106,65,1,1],[107,67,1,1],[108,64,1,2],[109,65,1,1],[110,62,1,3],[111,64,1,2],[112,60,1,5],[113,62,1,4],[114,60,1,5],[115,64,1,3],[116,62,1,4],[117,65,1,2],[118,64,1,3],[119,67,1,1],[120,59,1,5],[121,60,1,4],[122,59,1,5],[123,62,1,3],[124,60,1,4],[125,64,1,2],[126,62,1,3],[127,65,1,1],[128,57,1,5],[129,59,1,4],[130,57,1,5],[131,60,1,3],[132,59,1,4],[133,62,1,2],[134,60,1,3],[135,64,1,1],[136,55,1,5],[137,57,1,4],[138,55,1,5],[139,59,1,3],[140,57,1,4],[141,60,1,2],[142,59,1,3],[143,62,1,1],[144,53,1,5],[145,55,1,4],[146,53,1,5],[147,57,1,3],[148,55,1,4],[149,59,1,2],[150,57,1,3],[151,60,1,1],[152,52,1,5],[153,53,1,4],[154,52,1,5],[155,55,1,3],[156,53,1,4],[157,57,1,2],[158,55,1,3],[159,59,1,1],[160,50,1,5],[161,52,1,4],[162,50,1,5],[163,53,1,3],[164,52,1,4],[165,55,1,2],[166,53,1,3],[167,57,1,1],[168,48,1,5],[169,50,1,4],[170,48,1,5],[171,52,1,3],[172,50,1,4],[173,53,1,2],[174,52,1,3],[175,55,1,1],[176,47,1,5],[177,48,1,4],[178,47,1,5],[179,50,1,3],[180,48,1,4],[181,52,1,2],[182,50,1,3],[183,53,1,1],[184,45,1,5],[185,47,1,4],[186,45,1,5],[187,48,1,3],[188,47,1,4],[189,50,1,2],[190,48,1,3],[191,52,1,1],[192,43,1,5],[193,45,1,4],[194,43,1,5],[195,47,1,3],[196,45,1,4],[197,48,1,2],[198,47,1,3],[199,50,1,1],[200,41,1,5],[201,43,1,4],[202,41,1,5],[203,45,1,3],[204,43,1,4],[205,47,1,2],[206,45,1,3],[207,48,1,1],[208,40,1,5],[209,41,1,4],[210,40,1,5],[211,43,1,3],[212,41,1,4],[213,45,1,2],[214,43,1,3],[215,47,1,1],[216,38,1,5],[217,40,1,4],[218,38,1,5],[219,41,1,3],[220,40,1,4],[221,43,1,2],[222,41,1,3],[223,45,1,1],[224,36,8,0]]},{"n":6,"len":232,"split":112,"R":[[0,48,1,1],[1,57,1,5],[2,55,1,4],[3,57,1,5],[4,53,1,3],[5,57,1,5],[6,52,1,2],[7,57,1,5],[8,50,1,1],[9,59,1,5],[10,57,1,4],[11,59,1,5],[12,55,1,3],[13,59,1,5],[14,53,1,2],[15,59,1,5],[16,52,1,1],[17,60,1,5],[18,59,1,5],[19,60,1,5],[20,57,1,4],[21,60,1,5],[22,55,1,3],[23,60,1,5],[24,53,1,1],[25,62,1,5],[26,60,1,5],[27,62,1,5],[28,59,1,4],[29,62,1,5],[30,57,1,3],[31,62,1,5],[32,55,1,1],[33,64,1,5],[34,62,1,5],[35,64,1,5],[36,60,1,4],[37,64,1,5],[38,59,1,3],[39,64,1,5],[40,57,1,1],[41,65,1,5],[42,64,1,5],[43,65,1,5],[44,62,1,4],[45,65,1,5],[46,60,1,3],[47,65,1,5],[48,59,1,1],[49,67,1,5],[50,65,1,5],[51,67,1,5],[52,64,1,4],[53,67,1,5],[54,62,1,3],[55,67,1,5],[56,60,1,1],[57,69,1,5],[58,67,1,5],[59,69,1,5],[60,65,1,4],[61,69,1,5],[62,64,1,3],[63,69,1,5],[64,62,1,1],[65,71,1,5],[66,69,1,5],[67,71,1,5],[68,67,1,4],[69,71,1,5],[70,65,1,3],[71,71,1,5],[72,64,1,1],[73,72,1,5],[74,71,1,5],[75,72,1,5],[76,69,1,4],[77,72,1,5],[78,67,1,3],[79,72,1,5],[80,65,1,1],[81,74,1,5],[82,72,1,5],[83,74,1,5],[84,71,1,4],[85,74,1,5],[86,69,1,3],[87,74,1,5],[88,67,1,1],[89,76,1,5],[90,74,1,5],[91,76,1,5],[92,72,1,4],[93,76,1,5],[94,71,1,3],[95,76,1,5],[96,69,1,1],[97,77,1,5],[98,76,1,5],[99,77,1,5],[100,74,1,4],[101,77,1,5],[102,72,1,3],[103,77,1,5],[104,71,1,1],[105,79,1,5],[106,77,1,5],[107,79,1,5],[108,76,1,4],[109,79,1,5],[110,74,1,3],[111,72,1,2],[112,79,1,5],[113,71,1,1],[114,72,1,2],[115,71,1,1],[116,74,1,3],[117,71,1,1],[118,76,1,4],[119,71,1,1],[120,77,1,5],[121,69,1,1],[122,71,1,2],[123,69,1,1],[124,72,1,3],[125,69,1,1],[126,74,1,4],[127,69,1,1],[128,76,1,5],[129,67,1,1],[130,69,1,2],[131,67,1,1],[132,71,1,3],[133,67,1,1],[134,72,1,4],[135,67,1,1],[136,74,1,5],[137,65,1,1],[138,67,1,2],[139,65,1,1],[140,69,1,3],[141,65,1,1],[142,71,1,4],[143,65,1,1],[144,72,1,5],[145,64,1,1],[146,65,1,2],[147,64,1,1],[148,67,1,3],[149,64,1,1],[150,69,1,4],[151,64,1,1],[152,71,1,5],[153,62,1,1],[154,64,1,2],[155,62,1,1],[156,65,1,3],[157,62,1,1],[158,67,1,4],[159,62,1,1],[160,69,1,5],[161,60,1,1],[162,62,1,2],[163,60,1,1],[164,64,1,3],[165,60,1,1],[166,65,1,4],[167,60,1,1],[168,67,1,5],[169,59,1,1],[170,60,1,2],[171,59,1,1],[172,62,1,3],[173,59,1,1],[174,64,1,4],[175,59,1,1],[176,65,1,5],[177,57,1,1],[178,59,1,2],[179,57,1,1],[180,60,1,3],[181,57,1,1],[182,62,1,4],[183,57,1,1],[184,64,1,5],[185,55,1,1],[186,57,1,2],[187,55,1,1],[188,59,1,3],[189,55,1,1],[190,60,1,4],[191,55,1,1],[192,62,1,5],[193,53,1,1],[194,55,1,1],[195,53,1,1],[196,57,1,2],[197,53,1,1],[198,59,1,3],[199,53,1,1],[200,60,1,4],[201,52,1,1],[202,53,1,2],[203,52,1,1],[204,55,1,3],[205,52,1,1],[206,57,1,4],[207,52,1,1],[208,59,1,5],[209,50,1,1],[210,52,1,2],[211,50,1,1],[212,53,1,3],[213,50,1,1],[214,55,1,4],[215,50,1,1],[216,57,1,5],[217,48,1,1],[218,50,1,2],[219,48,1,1],[220,52,1,3],[221,48,1,1],[222,53,1,4],[223,52,1,3],[224,48,8,0]],"L":[[0,36,1,5],[1,45,1,1],[2,43,1,2],[3,45,1,1],[4,41,1,3],[5,45,1,1],[6,40,1,4],[7,45,1,1],[8,38,1,5],[9,47,1,1],[10,45,1,2],[11,47,1,1],[12,43,1,3],[13,47,1,1],[14,41,1,4],[15,47,1,1],[16,40,1,5],[17,48,1,1],[18,47,1,1],[19,48,1,1],[20,45,1,2],[21,48,1,1],[22,43,1,3],[23,48,1,1],[24,41,1,5],[25,50,1,1],[26,48,1,1],[27,50,1,1],[28,47,1,2],[29,50,1,1],[30,45,1,3],[31,50,1,1],[32,43,1,5],[33,52,1,1],[34,50,1,1],[35,52,1,1],[36,48,1,2],[37,52,1,1],[38,47,1,3],[39,52,1,1],[40,45,1,5],[41,53,1,1],[42,52,1,1],[43,53,1,1],[44,50,1,2],[45,53,1,1],[46,48,1,3],[47,53,1,1],[48,47,1,5],[49,55,1,1],[50,53,1,1],[51,55,1,1],[52,52,1,2],[53,55,1,1],[54,50,1,3],[55,55,1,1],[56,48,1,5],[57,57,1,1],[58,55,1,1],[59,57,1,1],[60,53,1,2],[61,57,1,1],[62,52,1,3],[63,57,1,1],[64,50,1,5],[65,59,1,1],[66,57,1,1],[67,59,1,1],[68,55,1,2],[69,59,1,1],[70,53,1,3],[71,59,1,1],[72,52,1,5],[73,60,1,1],[74,59,1,1],[75,60,1,1],[76,57,1,2],[77,60,1,1],[78,55,1,3],[79,60,1,1],[80,53,1,5],[81,62,1,1],[82,60,1,1],[83,62,1,1],[84,59,1,2],[85,62,1,1],[86,57,1,3],[87,62,1,1],[88,55,1,5],[89,64,1,1],[90,62,1,1],[91,64,1,1],[92,60,1,2],[93,64,1,1],[94,59,1,3],[95,64,1,1],[96,57,1,5],[97,65,1,1],[98,64,1,1],[99,65,1,1],[100,62,1,2],[101,65,1,1],[102,60,1,3],[103,65,1,1],[104,59,1,5],[105,67,1,1],[106,65,1,1],[107,67,1,1],[108,64,1,2],[109,67,1,1],[110,62,1,3],[111,60,1,4],[112,67,1,1],[113,59,1,5],[114,60,1,4],[115,59,1,5],[116,62,1,3],[117,59,1,5],[118,64,1,2],[119,59,1,5],[120,65,1,1],[121,57,1,5],[122,59,1,4],[123,57,1,5],[124,60,1,3],[125,57,1,5],[126,62,1,2],[127,57,1,5],[128,64,1,1],[129,55,1,5],[130,57,1,4],[131,55,1,5],[132,59,1,3],[133,55,1,5],[134,60,1,2],[135,55,1,5],[136,62,1,1],[137,53,1,5],[138,55,1,4],[139,53,1,5],[140,57,1,3],[141,53,1,5],[142,59,1,2],[143,53,1,5],[144,60,1,1],[145,52,1,5],[146,53,1,4],[147,52,1,5],[148,55,1,3],[149,52,1,5],[150,57,1,2],[151,52,1,5],[152,59,1,1],[153,50,1,5],[154,52,1,4],[155,50,1,5],[156,53,1,3],[157,50,1,5],[158,55,1,2],[159,50,1,5],[160,57,1,1],[161,48,1,5],[162,50,1,4],[163,48,1,5],[164,52,1,3],[165,48,1,5],[166,53,1,2],[167,48,1,5],[168,55,1,1],[169,47,1,5],[170,48,1,4],[171,47,1,5],[172,50,1,3],[173,47,1,5],[174,52,1,2],[175,47,1,5],[176,53,1,1],[177,45,1,5],[178,47,1,4],[179,45,1,5],[180,48,1,3],[181,45,1,5],[182,50,1,2],[183,45,1,5],[184,52,1,1],[185,43,1,5],[186,45,1,4],[187,43,1,5],[188,47,1,3],[189,43,1,5],[190,48,1,2],[191,43,1,5],[192,50,1,1],[193,41,1,5],[194,43,1,4],[195,41,1,5],[196,45,1,3],[197,41,1,5],[198,47,1,2],[199,41,1,5],[200,48,1,1],[201,40,1,5],[202,41,1,4],[203,40,1,5],[204,43,1,3],[205,40,1,5],[206,45,1,2],[207,40,1,5],[208,47,1,1],[209,38,1,5],[210,40,1,4],[211,38,1,5],[212,41,1,3],[213,38,1,5],[214,43,1,2],[215,38,1,5],[216,45,1,1],[217,36,1,5],[218,38,1,4],[219,36,1,5],[220,40,1,3],[221,36,1,5],[222,41,1,2],[223,40,1,3],[224,36,8,0]]},{"n":7,"len":232,"split":112,"R":[[0,48,1,1],[1,52,1,3],[2,50,1,2],[3,53,1,4],[4,52,1,3],[5,55,1,5],[6,53,1,4],[7,52,1,3],[8,50,1,1],[9,53,1,3],[10,52,1,2],[11,55,1,4],[12,53,1,3],[13,57,1,5],[14,55,1,4],[15,53,1,3],[16,52,1,1],[17,55,1,3],[18,53,1,2],[19,57,1,4],[20,55,1,3],[21,59,1,5],[22,57,1,4],[23,55,1,3],[24,53,1,1],[25,57,1,3],[26,55,1,2],[27,59,1,4],[28,57,1,3],[29,60,1,5],[30,59,1,4],[31,57,1,3],[32,55,1,1],[33,59,1,3],[34,57,1,2],[35,60,1,4],[36,59,1,3],[37,62,1,5],[38,60,1,4],[39,59,1,3],[40,57,1,1],[41,60,1,3],[42,59,1,2],[43,62,1,4],[44,60,1,3],[45,64,1,5],[46,62,1,4],[47,60,1,3],[48,59,1,1],[49,62,1,3],[50,60,1,2],[51,64,1,4],[52,62,1,3],[53,65,1,5],[54,64,1,4],[55,62,1,3],[56,60,1,1],[57,64,1,3],[58,62,1,2],[59,65,1,4],[60,64,1,3],[61,67,1,5],[62,65,1,4],[63,64,1,3],[64,62,1,1],[65,65,1,3],[66,64,1,2],[67,67,1,4],[68,65,1,3],[69,69,1,5],[70,67,1,4],[71,65,1,3],[72,64,1,1],[73,67,1,3],[74,65,1,2],[75,69,1,4],[76,67,1,3],[77,71,1,5],[78,69,1,4],[79,67,1,3],[80,65,1,1],[81,69,1,3],[82,67,1,2],[83,71,1,4],[84,69,1,3],[85,72,1,5],[86,71,1,4],[87,69,1,3],[88,67,1,1],[89,71,1,3],[90,69,1,2],[91,72,1,4],[92,71,1,3],[93,74,1,5],[94,72,1,4],[95,71,1,3],[96,69,1,1],[97,72,1,3],[98,71,1,2],[99,74,1,4],[100,72,1,3],[101,76,1,5],[102,74,1,4],[103,72,1,3],[104,71,1,1],[105,74,1,3],[106,72,1,2],[107,76,1,4],[108,74,1,3],[109,77,1,5],[110,76,1,3],[111,74,1,2],[112,79,1,5],[113,76,1,3],[114,77,1,4],[115,74,1,2],[116,76,1,3],[117,72,1,1],[118,74,1,3],[119,76,1,4],[120,77,1,5],[121,74,1,3],[122,76,1,4],[123,72,1,2],[124,74,1,3],[125,71,1,1],[126,72,1,3],[127,74,1,4],[128,76,1,5],[129,72,1,3],[130,74,1,4],[131,71,1,2],[132,72,1,3],[133,69,1,1],[134,71,1,3],[135,72,1,4],[136,74,1,5],[137,71,1,3],[138,72,1,4],[139,69,1,2],[140,71,1,3],[141,67,1,1],[142,69,1,3],[143,71,1,4],[144,72,1,5],[145,69,1,3],[146,71,1,4],[147,67,1,2],[148,69,1,3],[149,65,1,1],[150,67,1,3],[151,69,1,4],[152,71,1,5],[153,67,1,3],[154,69,1,4],[155,65,1,2],[156,67,1,3],[157,64,1,1],[158,65,1,3],[159,67,1,4],[160,69,1,5],[161,65,1,3],[162,67,1,4],[163,64,1,2],[164,65,1,3],[165,62,1,1],[166,64,1,3],[167,65,1,4],[168,67,1,5],[169,64,1,3],[170,65,1,4],[171,62,1,2],[172,64,1,3],[173,60,1,1],[174,62,1,3],[175,64,1,4],[176,65,1,5],[177,62,1,3],[178,64,1,4],[179,60,1,2],[180,62,1,3],[181,59,1,1],[182,60,1,3],[183,62,1,4],[184,64,1,5],[185,60,1,3],[186,62,1,4],[187,59,1,2],[188,60,1,3],[189,57,1,1],[190,59,1,3],[191,60,1,4],[192,62,1,5],[193,59,1,3],[194,60,1,4],[195,57,1,2],[196,59,1,3],[197,55,1,1],[198,57,1,3],[199,59,1,4],[200,60,1,5],[201,57,1,3],[202,59,1,4],[203,55,1,2],[204,57,1,3],[205,53,1,1],[206,55,1,3],[207,57,1,4],[208,59,1,5],[209,55,1,3],[210,57,1,4],[211,53,1,2],[212,55,1,3],[213,52,1,1],[214,53,1,3],[215,55,1,4],[216,57,1,5],[217,53,1,3],[218,55,1,4],[219,52,1,2],[220,53,1,3],[221,50,1,1],[222,52,1,3],[223,53,1,4],[224,48,8,0]],"L":[[0,36,1,5],[1,40,1,3],[2,38,1,4],[3,41,1,2],[4,40,1,3],[5,43,1,1],[6,41,1,3],[7,40,1,4],[8,38,1,5],[9,41,1,3],[10,40,1,4],[11,43,1,2],[12,41,1,3],[13,45,1,1],[14,43,1,3],[15,41,1,4],[16,40,1,5],[17,43,1,3],[18,41,1,4],[19,45,1,2],[20,43,1,3],[21,47,1,1],[22,45,1,3],[23,43,1,4],[24,41,1,5],[25,45,1,3],[26,43,1,4],[27,47,1,2],[28,45,1,3],[29,48,1,1],[30,47,1,3],[31,45,1,4],[32,43,1,5],[33,47,1,3],[34,45,1,4],[35,48,1,2],[36,47,1,3],[37,50,1,1],[38,48,1,3],[39,47,1,4],[40,45,1,5],[41,48,1,3],[42,47,1,4],[43,50,1,2],[44,48,1,3],[45,52,1,1],[46,50,1,3],[47,48,1,4],[48,47,1,5],[49,50,1,3],[50,48,1,4],[51,52,1,2],[52,50,1,3],[53,53,1,1],[54,52,1,3],[55,50,1,4],[56,48,1,5],[57,52,1,3],[58,50,1,4],[59,53,1,2],[60,52,1,3],[61,55,1,1],[62,53,1,3],[63,52,1,4],[64,50,1,5],[65,53,1,3],[66,52,1,4],[67,55,1,2],[68,53,1,3],[69,57,1,1],[70,55,1,3],[71,53,1,4],[72,52,1,5],[73,55,1,3],[74,53,1,4],[75,57,1,2],[76,55,1,3],[77,59,1,1],[78,57,1,3],[79,55,1,4],[80,53,1,5],[81,57,1,3],[82,55,1,4],[83,59,1,2],[84,57,1,3],[85,60,1,1],[86,59,1,3],[87,57,1,4],[88,55,1,5],[89,59,1,3],[90,57,1,4],[91,60,1,2],[92,59,1,3],[93,62,1,1],[94,60,1,3],[95,59,1,4],[96,57,1,5],[97,60,1,3],[98,59,1,4],[99,62,1,2],[100,60,1,3],[101,64,1,1],[102,62,1,3],[103,60,1,4],[104,59,1,5],[105,62,1,3],[106,60,1,4],[107,64,1,2],[108,62,1,3],[109,65,1,1],[110,64,1,3],[111,62,1,4],[112,67,1,1],[113,64,1,3],[114,65,1,2],[115,62,1,4],[116,64,1,3],[117,60,1,5],[118,62,1,4],[119,64,1,3],[120,65,1,1],[121,62,1,3],[122,64,1,2],[123,60,1,4],[124,62,1,3],[125,59,1,5],[126,60,1,4],[127,62,1,3],[128,64,1,1],[129,60,1,3],[130,62,1,2],[131,59,1,4],[132,60,1,3],[133,57,1,5],[134,59,1,4],[135,60,1,3],[136,62,1,1],[137,59,1,3],[138,60,1,2],[139,57,1,4],[140,59,1,3],[141,55,1,5],[142,57,1,4],[143,59,1,3],[144,60,1,1],[145,57,1,3],[146,59,1,2],[147,55,1,4],[148,57,1,3],[149,53,1,5],[150,55,1,4],[151,57,1,3],[152,59,1,1],[153,55,1,3],[154,57,1,2],[155,53,1,4],[156,55,1,3],[157,52,1,5],[158,53,1,4],[159,55,1,3],[160,57,1,1],[161,53,1,3],[162,55,1,2],[163,52,1,4],[164,53,1,3],[165,50,1,5],[166,52,1,4],[167,53,1,3],[168,55,1,1],[169,52,1,3],[170,53,1,2],[171,50,1,4],[172,52,1,3],[173,48,1,5],[174,50,1,4],[175,52,1,3],[176,53,1,1],[177,50,1,3],[178,52,1,2],[179,48,1,4],[180,50,1,3],[181,47,1,5],[182,48,1,4],[183,50,1,3],[184,52,1,1],[185,48,1,3],[186,50,1,2],[187,47,1,4],[188,48,1,3],[189,45,1,5],[190,47,1,4],[191,48,1,3],[192,50,1,1],[193,47,1,3],[194,48,1,2],[195,45,1,4],[196,47,1,3],[197,43,1,5],[198,45,1,4],[199,47,1,3],[200,48,1,1],[201,45,1,3],[202,47,1,2],[203,43,1,4],[204,45,1,3],[205,41,1,5],[206,43,1,4],[207,45,1,3],[208,47,1,1],[209,43,1,3],[210,45,1,2],[211,41,1,4],[212,43,1,3],[213,40,1,5],[214,41,1,4],[215,43,1,3],[216,45,1,1],[217,41,1,3],[218,43,1,2],[219,40,1,4],[220,41,1,3],[221,38,1,5],[222,40,1,3],[223,41,1,2],[224,36,8,0]]},{"n":8,"len":232,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,55,1,4],[3,57,1,5],[4,53,1,3],[5,55,1,4],[6,52,1,2],[7,53,1,3],[8,50,1,1],[9,53,1,2],[10,57,1,4],[11,59,1,5],[12,55,1,3],[13,57,1,4],[14,53,1,2],[15,55,1,3],[16,52,1,1],[17,55,1,2],[18,59,1,4],[19,60,1,5],[20,57,1,3],[21,59,1,4],[22,55,1,2],[23,57,1,3],[24,53,1,1],[25,57,1,2],[26,60,1,4],[27,62,1,5],[28,59,1,3],[29,60,1,4],[30,57,1,2],[31,59,1,3],[32,55,1,1],[33,59,1,2],[34,62,1,4],[35,64,1,5],[36,60,1,3],[37,62,1,4],[38,59,1,2],[39,60,1,3],[40,57,1,1],[41,60,1,2],[42,64,1,4],[43,65,1,5],[44,62,1,3],[45,64,1,4],[46,60,1,2],[47,62,1,3],[48,59,1,1],[49,62,1,2],[50,65,1,4],[51,67,1,5],[52,64,1,3],[53,65,1,4],[54,62,1,2],[55,64,1,3],[56,60,1,1],[57,64,1,2],[58,67,1,4],[59,69,1,5],[60,65,1,3],[61,67,1,4],[62,64,1,2],[63,65,1,3],[64,62,1,1],[65,65,1,2],[66,69,1,4],[67,71,1,5],[68,67,1,3],[69,69,1,4],[70,65,1,2],[71,67,1,3],[72,64,1,1],[73,67,1,2],[74,71,1,4],[75,72,1,5],[76,69,1,3],[77,71,1,4],[78,67,1,2],[79,69,1,3],[80,65,1,1],[81,69,1,3],[82,72,1,5],[83,74,1,5],[84,71,1,4],[85,72,1,5],[86,69,1,3],[87,71,1,4],[88,67,1,1],[89,71,1,3],[90,74,1,5],[91,76,1,5],[92,72,1,4],[93,74,1,5],[94,71,1,3],[95,72,1,4],[96,69,1,1],[97,72,1,3],[98,76,1,5],[99,77,1,5],[100,74,1,4],[101,76,1,5],[102,72,1,3],[103,74,1,4],[104,71,1,1],[105,74,1,3],[106,77,1,5],[107,79,1,5],[108,76,1,4],[109,77,1,5],[110,74,1,3],[111,76,1,4],[112,79,1,5],[113,76,1,4],[114,72,1,2],[115,71,1,1],[116,74,1,3],[117,72,1,2],[118,76,1,4],[119,74,1,3],[120,77,1,5],[121,74,1,4],[122,71,1,2],[123,69,1,1],[124,72,1,3],[125,71,1,2],[126,74,1,4],[127,72,1,3],[128,76,1,5],[129,72,1,4],[130,69,1,2],[131,67,1,1],[132,71,1,3],[133,69,1,2],[134,72,1,4],[135,71,1,3],[136,74,1,5],[137,71,1,4],[138,67,1,2],[139,65,1,1],[140,69,1,3],[141,67,1,2],[142,71,1,4],[143,69,1,3],[144,72,1,5],[145,69,1,3],[146,65,1,1],[147,64,1,1],[148,67,1,2],[149,65,1,1],[150,69,1,3],[151,67,1,2],[152,71,1,5],[153,67,1,3],[154,64,1,1],[155,62,1,1],[156,65,1,2],[157,64,1,1],[158,67,1,3],[159,65,1,2],[160,69,1,5],[161,65,1,3],[162,62,1,1],[163,60,1,1],[164,64,1,2],[165,62,1,1],[166,65,1,3],[167,64,1,2],[168,67,1,5],[169,64,1,3],[170,60,1,1],[171,59,1,1],[172,62,1,2],[173,60,1,1],[174,64,1,3],[175,62,1,2],[176,65,1,5],[177,62,1,3],[178,59,1,1],[179,57,1,1],[180,60,1,2],[181,59,1,1],[182,62,1,3],[183,60,1,2],[184,64,1,5],[185,60,1,3],[186,57,1,1],[187,55,1,1],[188,59,1,2],[189,57,1,1],[190,60,1,3],[191,59,1,2],[192,62,1,5],[193,59,1,3],[194,55,1,1],[195,53,1,1],[196,57,1,2],[197,55,1,1],[198,59,1,3],[199,57,1,2],[200,60,1,5],[201,57,1,3],[202,53,1,1],[203,52,1,1],[204,55,1,2],[205,53,1,1],[206,57,1,3],[207,55,1,2],[208,59,1,5],[209,55,1,3],[210,52,1,1],[211,50,1,1],[212,53,1,2],[213,52,1,1],[214,55,1,3],[215,53,1,2],[216,57,1,5],[217,53,1,3],[218,50,1,1],[219,48,1,1],[220,52,1,2],[221,50,1,1],[222,53,1,3],[223,52,1,2],[224,48,8,0]],"L":[[0,36,1,5],[1,40,1,4],[2,43,1,2],[3,45,1,1],[4,41,1,3],[5,43,1,2],[6,40,1,4],[7,41,1,3],[8,38,1,5],[9,41,1,4],[10,45,1,2],[11,47,1,1],[12,43,1,3],[13,45,1,2],[14,41,1,4],[15,43,1,3],[16,40,1,5],[17,43,1,4],[18,47,1,2],[19,48,1,1],[20,45,1,3],[21,47,1,2],[22,43,1,4],[23,45,1,3],[24,41,1,5],[25,45,1,4],[26,48,1,2],[27,50,1,1],[28,47,1,3],[29,48,1,2],[30,45,1,4],[31,47,1,3],[32,43,1,5],[33,47,1,4],[34,50,1,2],[35,52,1,1],[36,48,1,3],[37,50,1,2],[38,47,1,4],[39,48,1,3],[40,45,1,5],[41,48,1,4],[42,52,1,2],[43,53,1,1],[44,50,1,3],[45,52,1,2],[46,48,1,4],[47,50,1,3],[48,47,1,5],[49,50,1,3],[50,53,1,1],[51,55,1,1],[52,52,1,2],[53,53,1,1],[54,50,1,3],[55,52,1,2],[56,48,1,5],[57,52,1,4],[58,55,1,2],[59,57,1,1],[60,53,1,3],[61,55,1,2],[62,52,1,4],[63,53,1,3],[64,50,1,5],[65,53,1,4],[66,57,1,2],[67,59,1,1],[68,55,1,3],[69,57,1,2],[70,53,1,4],[71,55,1,3],[72,52,1,5],[73,55,1,4],[74,59,1,2],[75,60,1,1],[76,57,1,3],[77,59,1,2],[78,55,1,4],[79,57,1,3],[80,53,1,5],[81,57,1,3],[82,60,1,1],[83,62,1,1],[84,59,1,2],[85,60,1,1],[86,57,1,3],[87,59,1,2],[88,55,1,5],[89,59,1,3],[90,62,1,1],[91,64,1,1],[92,60,1,2],[93,62,1,1],[94,59,1,3],[95,60,1,2],[96,57,1,5],[97,60,1,3],[98,64,1,1],[99,65,1,1],[100,62,1,2],[101,64,1,1],[102,60,1,3],[103,62,1,2],[104,59,1,5],[105,62,1,3],[106,65,1,1],[107,67,1,1],[108,64,1,2],[109,65,1,1],[110,62,1,3],[111,64,1,2],[112,67,1,1],[113,64,1,2],[114,60,1,4],[115,59,1,5],[116,62,1,3],[117,60,1,4],[118,64,1,2],[119,62,1,3],[120,65,1,1],[121,62,1,2],[122,59,1,4],[123,57,1,5],[124,60,1,3],[125,59,1,4],[126,62,1,2],[127,60,1,3],[128,64,1,1],[129,60,1,2],[130,57,1,4],[131,55,1,5],[132,59,1,3],[133,57,1,4],[134,60,1,2],[135,59,1,3],[136,62,1,1],[137,59,1,2],[138,55,1,4],[139,53,1,5],[140,57,1,3],[141,55,1,4],[142,59,1,2],[143,57,1,3],[144,60,1,1],[145,57,1,3],[146,53,1,5],[147,52,1,5],[148,55,1,4],[149,53,1,5],[150,57,1,3],[151,55,1,4],[152,59,1,1],[153,55,1,3],[154,52,1,5],[155,50,1,5],[156,53,1,4],[157,52,1,5],[158,55,1,3],[159,53,1,4],[160,57,1,1],[161,53,1,3],[162,50,1,5],[163,48,1,5],[164,52,1,4],[165,50,1,5],[166,53,1,3],[167,52,1,4],[168,55,1,1],[169,52,1,3],[170,48,1,5],[171,47,1,5],[172,50,1,4],[173,48,1,5],[174,52,1,3],[175,50,1,4],[176,53,1,1],[177,50,1,3],[178,47,1,5],[179,45,1,5],[180,48,1,4],[181,47,1,5],[182,50,1,3],[183,48,1,4],[184,52,1,1],[185,48,1,3],[186,45,1,5],[187,43,1,5],[188,47,1,4],[189,45,1,5],[190,48,1,3],[191,47,1,4],[192,50,1,1],[193,47,1,3],[194,43,1,5],[195,41,1,5],[196,45,1,4],[197,43,1,5],[198,47,1,3],[199,45,1,4],[200,48,1,1],[201,45,1,3],[202,41,1,5],[203,40,1,5],[204,43,1,4],[205,41,1,5],[206,45,1,3],[207,43,1,4],[208,47,1,1],[209,43,1,3],[210,40,1,5],[211,38,1,5],[212,41,1,4],[213,40,1,5],[214,43,1,3],[215,41,1,4],[216,45,1,2],[217,41,1,4],[218,38,1,5],[219,36,1,5],[220,40,1,4],[221,38,1,5],[222,41,1,3],[223,40,1,4],[224,36,8,0]]},{"n":9,"len":232,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3],[3,52,1,2],[4,55,1,4],[5,53,1,3],[6,57,1,5],[7,55,1,4],[8,50,1,1],[9,53,1,2],[10,55,1,3],[11,53,1,2],[12,57,1,4],[13,55,1,3],[14,59,1,5],[15,57,1,4],[16,52,1,1],[17,55,1,2],[18,57,1,3],[19,55,1,2],[20,59,1,4],[21,57,1,3],[22,60,1,5],[23,59,1,4],[24,53,1,1],[25,57,1,2],[26,59,1,3],[27,57,1,2],[28,60,1,4],[29,59,1,3],[30,62,1,5],[31,60,1,4],[32,55,1,1],[33,59,1,2],[34,60,1,3],[35,59,1,2],[36,62,1,4],[37,60,1,3],[38,64,1,5],[39,62,1,4],[40,57,1,1],[41,60,1,2],[42,62,1,3],[43,60,1,2],[44,64,1,4],[45,62,1,3],[46,65,1,5],[47,64,1,4],[48,59,1,1],[49,62,1,2],[50,64,1,3],[51,62,1,2],[52,65,1,4],[53,64,1,3],[54,67,1,5],[55,65,1,4],[56,60,1,1],[57,64,1,2],[58,65,1,3],[59,64,1,2],[60,67,1,4],[61,65,1,3],[62,69,1,5],[63,67,1,4],[64,62,1,1],[65,65,1,2],[66,67,1,3],[67,65,1,2],[68,69,1,4],[69,67,1,3],[70,71,1,5],[71,69,1,4],[72,64,1,1],[73,67,1,2],[74,69,1,3],[75,67,1,2],[76,71,1,4],[77,69,1,3],[78,72,1,5],[79,71,1,4],[80,65,1,1],[81,69,1,2],[82,71,1,3],[83,69,1,2],[84,72,1,4],[85,71,1,3],[86,74,1,5],[87,72,1,4],[88,67,1,1],[89,71,1,2],[90,72,1,3],[91,71,1,2],[92,74,1,4],[93,72,1,3],[94,76,1,5],[95,74,1,4],[96,69,1,1],[97,72,1,2],[98,74,1,3],[99,72,1,2],[100,76,1,4],[101,74,1,3],[102,77,1,5],[103,76,1,4],[104,71,1,1],[105,74,1,2],[106,76,1,3],[107,74,1,2],[108,77,1,4],[109,76,1,3],[110,79,1,5],[111,77,1,4],[112,79,1,5],[113,76,1,4],[114,74,1,3],[115,76,1,4],[116,72,1,2],[117,74,1,3],[118,71,1,1],[119,72,1,2],[120,77,1,5],[121,74,1,4],[122,72,1,3],[123,74,1,4],[124,71,1,2],[125,72,1,3],[126,69,1,1],[127,71,1,2],[128,76,1,5],[129,72,1,4],[130,71,1,3],[131,72,1,4],[132,69,1,2],[133,71,1,3],[134,67,1,1],[135,69,1,2],[136,74,1,5],[137,71,1,4],[138,69,1,3],[139,71,1,4],[140,67,1,2],[141,69,1,3],[142,65,1,1],[143,67,1,2],[144,72,1,5],[145,69,1,4],[146,67,1,3],[147,69,1,4],[148,65,1,2],[149,67,1,3],[150,64,1,1],[151,65,1,2],[152,71,1,5],[153,67,1,4],[154,65,1,3],[155,67,1,4],[156,64,1,2],[157,65,1,3],[158,62,1,1],[159,64,1,2],[160,69,1,5],[161,65,1,4],[162,64,1,3],[163,65,1,4],[164,62,1,2],[165,64,1,3],[166,60,1,1],[167,62,1,2],[168,67,1,5],[169,64,1,4],[170,62,1,3],[171,64,1,4],[172,60,1,2],[173,62,1,3],[174,59,1,1],[175,60,1,2],[176,65,1,5],[177,62,1,4],[178,60,1,3],[179,62,1,4],[180,59,1,2],[181,60,1,3],[182,57,1,1],[183,59,1,2],[184,64,1,5],[185,60,1,4],[186,59,1,3],[187,60,1,4],[188,57,1,2],[189,59,1,3],[190,55,1,1],[191,57,1,2],[192,62,1,5],[193,59,1,4],[194,57,1,3],[195,59,1,4],[196,55,1,2],[197,57,1,3],[198,53,1,1],[199,55,1,2],[200,60,1,5],[201,57,1,4],[202,55,1,3],[203,57,1,4],[204,53,1,2],[205,55,1,3],[206,52,1,1],[207,53,1,2],[208,59,1,5],[209,55,1,4],[210,53,1,3],[211,55,1,4],[212,52,1,2],[213,53,1,3],[214,50,1,1],[215,52,1,2],[216,57,1,5],[217,53,1,4],[218,52,1,3],[219,53,1,4],[220,50,1,2],[221,52,1,3],[222,50,1,2],[223,52,1,3],[224,48,8,0]],"L":[[0,36,1,5],[1,40,1,4],[2,41,1,3],[3,40,1,4],[4,43,1,2],[5,41,1,3],[6,45,1,1],[7,43,1,2],[8,38,1,5],[9,41,1,4],[10,43,1,3],[11,41,1,4],[12,45,1,2],[13,43,1,3],[14,47,1,1],[15,45,1,2],[16,40,1,5],[17,43,1,4],[18,45,1,3],[19,43,1,4],[20,47,1,2],[21,45,1,3],[22,48,1,1],[23,47,1,2],[24,41,1,5],[25,45,1,4],[26,47,1,3],[27,45,1,4],[28,48,1,2],[29,47,1,3],[30,50,1,1],[31,48,1,2],[32,43,1,5],[33,47,1,4],[34,48,1,3],[35,47,1,4],[36,50,1,2],[37,48,1,3],[38,52,1,1],[39,50,1,2],[40,45,1,5],[41,48,1,4],[42,50,1,3],[43,48,1,4],[44,52,1,2],[45,50,1,3],[46,53,1,1],[47,52,1,2],[48,47,1,5],[49,50,1,4],[50,52,1,3],[51,50,1,4],[52,53,1,2],[53,52,1,3],[54,55,1,1],[55,53,1,2],[56,48,1,5],[57,52,1,4],[58,53,1,3],[59,52,1,4],[60,55,1,2],[61,53,1,3],[62,57,1,1],[63,55,1,2],[64,50,1,5],[65,53,1,4],[66,55,1,3],[67,53,1,4],[68,57,1,2],[69,55,1,3],[70,59,1,1],[71,57,1,2],[72,52,1,5],[73,55,1,4],[74,57,1,3],[75,55,1,4],[76,59,1,2],[77,57,1,3],[78,60,1,1],[79,59,1,2],[80,53,1,5],[81,57,1,4],[82,59,1,3],[83,57,1,4],[84,60,1,2],[85,59,1,3],[86,62,1,1],[87,60,1,2],[88,55,1,5],[89,59,1,4],[90,60,1,3],[91,59,1,4],[92,62,1,2],[93,60,1,3],[94,64,1,1],[95,62,1,2],[96,57,1,5],[97,60,1,4],[98,62,1,3],[99,60,1,4],[100,64,1,2],[101,62,1,3],[102,65,1,1],[103,64,1,2],[104,59,1,5],[105,62,1,4],[106,64,1,3],[107,62,1,4],[108,65,1,2],[109,64,1,3],[110,67,1,1],[111,65,1,2],[112,67,1,1],[113,64,1,2],[114,62,1,3],[115,64,1,2],[116,60,1,4],[117,62,1,3],[118,59,1,5],[119,60,1,4],[120,65,1,1],[121,62,1,2],[122,60,1,3],[123,62,1,2],[124,59,1,4],[125,60,1,3],[126,57,1,5],[127,59,1,4],[128,64,1,1],[129,60,1,2],[130,59,1,3],[131,60,1,2],[132,57,1,4],[133,59,1,3],[134,55,1,5],[135,57,1,4],[136,62,1,1],[137,59,1,2],[138,57,1,3],[139,59,1,2],[140,55,1,4],[141,57,1,3],[142,53,1,5],[143,55,1,4],[144,60,1,1],[145,57,1,2],[146,55,1,3],[147,57,1,2],[148,53,1,4],[149,55,1,3],[150,52,1,5],[151,53,1,4],[152,59,1,1],[153,55,1,2],[154,53,1,3],[155,55,1,2],[156,52,1,4],[157,53,1,3],[158,50,1,5],[159,52,1,4],[160,57,1,1],[161,53,1,2],[162,52,1,3],[163,53,1,2],[164,50,1,4],[165,52,1,3],[166,48,1,5],[167,50,1,4],[168,55,1,1],[169,52,1,2],[170,50,1,3],[171,52,1,2],[172,48,1,4],[173,50,1,3],[174,47,1,5],[175,48,1,4],[176,53,1,1],[177,50,1,2],[178,48,1,3],[179,50,1,2],[180,47,1,4],[181,48,1,3],[182,45,1,5],[183,47,1,4],[184,52,1,1],[185,48,1,2],[186,47,1,3],[187,48,1,2],[188,45,1,4],[189,47,1,3],[190,43,1,5],[191,45,1,4],[192,50,1,1],[193,47,1,2],[194,45,1,3],[195,47,1,2],[196,43,1,4],[197,45,1,3],[198,41,1,5],[199,43,1,4],[200,48,1,1],[201,45,1,2],[202,43,1,3],[203,45,1,2],[204,41,1,4],[205,43,1,3],[206,40,1,5],[207,41,1,4],[208,47,1,1],[209,43,1,2],[210,41,1,3],[211,43,1,2],[212,40,1,4],[213,41,1,3],[214,38,1,5],[215,40,1,4],[216,45,1,1],[217,41,1,2],[218,40,1,3],[219,41,1,2],[220,38,1,4],[221,40,1,3],[222,38,1,4],[223,40,1,3],[224,36,8,0]]},{"n":10,"len":232,"split":112,"R":[[0,48,1,1],[1,57,1,5],[2,55,1,4],[3,53,1,3],[4,52,1,2],[5,53,1,3],[6,52,1,2],[7,53,1,3],[8,50,1,1],[9,59,1,5],[10,57,1,4],[11,55,1,3],[12,53,1,2],[13,55,1,3],[14,53,1,2],[15,55,1,3],[16,52,1,1],[17,60,1,5],[18,59,1,4],[19,57,1,3],[20,55,1,2],[21,57,1,3],[22,55,1,2],[23,57,1,3],[24,53,1,1],[25,62,1,5],[26,60,1,4],[27,59,1,3],[28,57,1,2],[29,59,1,3],[30,57,1,2],[31,59,1,3],[32,55,1,1],[33,64,1,5],[34,62,1,4],[35,60,1,3],[36,59,1,2],[37,60,1,3],[38,59,1,2],[39,60,1,3],[40,57,1,1],[41,65,1,5],[42,64,1,4],[43,62,1,3],[44,60,1,2],[45,62,1,3],[46,60,1,2],[47,62,1,3],[48,59,1,1],[49,67,1,5],[50,65,1,4],[51,64,1,3],[52,62,1,2],[53,64,1,3],[54,62,1,2],[55,64,1,3],[56,60,1,1],[57,69,1,5],[58,67,1,4],[59,65,1,3],[60,64,1,2],[61,65,1,3],[62,64,1,2],[63,65,1,3],[64,62,1,1],[65,71,1,5],[66,69,1,4],[67,67,1,3],[68,65,1,2],[69,67,1,3],[70,65,1,2],[71,67,1,3],[72,64,1,1],[73,72,1,5],[74,71,1,4],[75,69,1,3],[76,67,1,2],[77,69,1,3],[78,67,1,2],[79,69,1,3],[80,65,1,1],[81,74,1,5],[82,72,1,4],[83,71,1,3],[84,69,1,2],[85,71,1,3],[86,69,1,2],[87,71,1,3],[88,67,1,1],[89,76,1,5],[90,74,1,4],[91,72,1,3],[92,71,1,2],[93,72,1,3],[94,71,1,2],[95,72,1,3],[96,69,1,1],[97,77,1,5],[98,76,1,4],[99,74,1,3],[100,72,1,2],[101,74,1,3],[102,72,1,2],[103,74,1,3],[104,71,1,1],[105,79,1,5],[106,77,1,4],[107,76,1,3],[108,74,1,2],[109,76,1,3],[110,74,1,2],[111,76,1,3],[112,79,1,5],[113,71,1,1],[114,72,1,2],[115,74,1,3],[116,76,1,4],[117,74,1,3],[118,76,1,4],[119,74,1,3],[120,77,1,5],[121,69,1,1],[122,71,1,2],[123,72,1,3],[124,74,1,4],[125,72,1,3],[126,74,1,4],[127,72,1,3],[128,76,1,5],[129,67,1,1],[130,69,1,2],[131,71,1,3],[132,72,1,4],[133,71,1,3],[134,72,1,4],[135,71,1,3],[136,74,1,5],[137,65,1,1],[138,67,1,2],[139,69,1,3],[140,71,1,4],[141,69,1,3],[142,71,1,4],[143,69,1,3],[144,72,1,5],[145,64,1,1],[146,65,1,2],[147,67,1,3],[148,69,1,4],[149,67,1,3],[150,69,1,4],[151,67,1,3],[152,71,1,5],[153,62,1,1],[154,64,1,2],[155,65,1,3],[156,67,1,4],[157,65,1,3],[158,67,1,4],[159,65,1,3],[160,69,1,5],[161,60,1,1],[162,62,1,2],[163,64,1,3],[164,65,1,4],[165,64,1,3],[166,65,1,4],[167,64,1,3],[168,67,1,5],[169,59,1,1],[170,60,1,2],[171,62,1,3],[172,64,1,4],[173,62,1,3],[174,64,1,4],[175,62,1,3],[176,65,1,5],[177,57,1,1],[178,59,1,2],[179,60,1,3],[180,62,1,4],[181,60,1,3],[182,62,1,4],[183,60,1,3],[184,64,1,5],[185,55,1,1],[186,57,1,2],[187,59,1,3],[188,60,1,4],[189,59,1,3],[190,60,1,4],[191,59,1,3],[192,62,1,5],[193,53,1,1],[194,55,1,2],[195,57,1,3],[196,59,1,4],[197,57,1,3],[198,59,1,4],[199,57,1,3],[200,60,1,5],[201,52,1,1],[202,53,1,2],[203,55,1,3],[204,57,1,4],[205,55,1,3],[206,57,1,4],[207,55,1,3],[208,59,1,5],[209,50,1,1],[210,52,1,2],[211,53,1,3],[212,55,1,4],[213,53,1,3],[214,55,1,4],[215,53,1,3],[216,57,1,5],[217,48,1,1],[218,50,1,2],[219,52,1,3],[220,53,1,4],[221,52,1,3],[222,53,1,4],[223,52,1,3],[224,48,8,0]],"L":[[0,36,1,5],[1,45,1,1],[2,43,1,2],[3,41,1,3],[4,40,1,4],[5,41,1,3],[6,40,1,4],[7,41,1,3],[8,38,1,5],[9,47,1,1],[10,45,1,2],[11,43,1,3],[12,41,1,4],[13,43,1,3],[14,41,1,4],[15,43,1,3],[16,40,1,5],[17,48,1,1],[18,47,1,2],[19,45,1,3],[20,43,1,4],[21,45,1,3],[22,43,1,4],[23,45,1,3],[24,41,1,5],[25,50,1,1],[26,48,1,2],[27,47,1,3],[28,45,1,4],[29,47,1,3],[30,45,1,4],[31,47,1,3],[32,43,1,5],[33,52,1,1],[34,50,1,2],[35,48,1,3],[36,47,1,4],[37,48,1,3],[38,47,1,4],[39,48,1,3],[40,45,1,5],[41,53,1,1],[42,52,1,2],[43,50,1,3],[44,48,1,4],[45,50,1,3],[46,48,1,4],[47,50,1,3],[48,47,1,5],[49,55,1,1],[50,53,1,2],[51,52,1,3],[52,50,1,4],[53,52,1,3],[54,50,1,4],[55,52,1,3],[56,48,1,5],[57,57,1,1],[58,55,1,2],[59,53,1,3],[60,52,1,4],[61,53,1,3],[62,52,1,4],[63,53,1,3],[64,50,1,5],[65,59,1,1],[66,57,1,2],[67,55,1,3],[68,53,1,4],[69,55,1,3],[70,53,1,4],[71,55,1,3],[72,52,1,5],[73,60,1,1],[74,59,1,2],[75,57,1,3],[76,55,1,4],[77,57,1,3],[78,55,1,4],[79,57,1,3],[80,53,1,5],[81,62,1,1],[82,60,1,2],[83,59,1,3],[84,57,1,4],[85,59,1,3],[86,57,1,4],[87,59,1,3],[88,55,1,5],[89,64,1,1],[90,62,1,2],[91,60,1,3],[92,59,1,4],[93,60,1,3],[94,59,1,4],[95,60,1,3],[96,57,1,5],[97,65,1,1],[98,64,1,2],[99,62,1,3],[100,60,1,4],[101,62,1,3],[102,60,1,4],[103,62,1,3],[104,59,1,5],[105,67,1,1],[106,65,1,2],[107,64,1,3],[108,62,1,4],[109,64,1,3],[110,62,1,4],[111,64,1,3],[112,67,1,1],[113,59,1,5],[114,60,1,4],[115,62,1,3],[116,64,1,2],[117,62,1,3],[118,64,1,2],[119,62,1,3],[120,65,1,1],[121,57,1,5],[122,59,1,4],[123,60,1,3],[124,62,1,2],[125,60,1,3],[126,62,1,2],[127,60,1,3],[128,64,1,1],[129,55,1,5],[130,57,1,4],[131,59,1,3],[132,60,1,2],[133,59,1,3],[134,60,1,2],[135,59,1,3],[136,62,1,1],[137,53,1,5],[138,55,1,4],[139,57,1,3],[140,59,1,2],[141,57,1,3],[142,59,1,2],[143,57,1,3],[144,60,1,1],[145,52,1,5],[146,53,1,4],[147,55,1,3],[148,57,1,2],[149,55,1,3],[150,57,1,2],[151,55,1,3],[152,59,1,1],[153,50,1,5],[154,52,1,4],[155,53,1,3],[156,55,1,2],[157,53,1,3],[158,55,1,2],[159,53,1,3],[160,57,1,1],[161,48,1,5],[162,50,1,4],[163,52,1,3],[164,53,1,2],[165,52,1,3],[166,53,1,2],[167,52,1,3],[168,55,1,1],[169,47,1,5],[170,48,1,4],[171,50,1,3],[172,52,1,2],[173,50,1,3],[174,52,1,2],[175,50,1,3],[176,53,1,1],[177,45,1,5],[178,47,1,4],[179,48,1,3],[180,50,1,2],[181,48,1,3],[182,50,1,2],[183,48,1,3],[184,52,1,1],[185,43,1,5],[186,45,1,4],[187,47,1,3],[188,48,1,2],[189,47,1,3],[190,48,1,2],[191,47,1,3],[192,50,1,1],[193,41,1,5],[194,43,1,4],[195,45,1,3],[196,47,1,2],[197,45,1,3],[198,47,1,2],[199,45,1,3],[200,48,1,1],[201,40,1,5],[202,41,1,4],[203,43,1,3],[204,45,1,2],[205,43,1,3],[206,45,1,2],[207,43,1,3],[208,47,1,1],[209,38,1,5],[210,40,1,4],[211,41,1,3],[212,43,1,2],[213,41,1,3],[214,43,1,2],[215,41,1,3],[216,45,1,1],[217,36,1,5],[218,38,1,4],[219,40,1,3],[220,41,1,2],[221,40,1,3],[222,41,1,2],[223,40,1,3],[224,36,8,0]]},{"n":11,"len":232,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,57,1,5],[3,55,1,4],[4,57,1,5],[5,55,1,4],[6,53,1,3],[7,55,1,4],[8,50,1,1],[9,53,1,2],[10,59,1,5],[11,57,1,4],[12,59,1,5],[13,57,1,4],[14,55,1,3],[15,57,1,4],[16,52,1,1],[17,55,1,2],[18,60,1,5],[19,59,1,4],[20,60,1,5],[21,59,1,4],[22,57,1,3],[23,59,1,4],[24,53,1,1],[25,57,1,2],[26,62,1,5],[27,60,1,4],[28,62,1,5],[29,60,1,4],[30,59,1,3],[31,60,1,4],[32,55,1,1],[33,59,1,2],[34,64,1,5],[35,62,1,4],[36,64,1,5],[37,62,1,4],[38,60,1,3],[39,62,1,4],[40,57,1,1],[41,60,1,2],[42,65,1,5],[43,64,1,4],[44,65,1,5],[45,64,1,4],[46,62,1,3],[47,64,1,4],[48,59,1,1],[49,62,1,2],[50,67,1,5],[51,65,1,4],[52,67,1,5],[53,65,1,4],[54,64,1,3],[55,65,1,4],[56,60,1,1],[57,64,1,2],[58,69,1,5],[59,67,1,4],[60,69,1,5],[61,67,1,4],[62,65,1,3],[63,67,1,4],[64,62,1,1],[65,65,1,2],[66,71,1,5],[67,69,1,4],[68,71,1,5],[69,69,1,4],[70,67,1,3],[71,69,1,4],[72,64,1,1],[73,67,1,2],[74,72,1,5],[75,71,1,4],[76,72,1,5],[77,71,1,4],[78,69,1,3],[79,71,1,4],[80,65,1,1],[81,69,1,2],[82,74,1,5],[83,72,1,4],[84,74,1,5],[85,72,1,4],[86,71,1,3],[87,72,1,4],[88,67,1,1],[89,71,1,2],[90,76,1,5],[91,74,1,4],[92,76,1,5],[93,74,1,4],[94,72,1,3],[95,74,1,4],[96,69,1,1],[97,72,1,2],[98,77,1,5],[99,76,1,4],[100,77,1,5],[101,76,1,4],[102,74,1,3],[103,76,1,4],[104,71,1,1],[105,74,1,2],[106,79,1,5],[107,77,1,4],[108,79,1,5],[109,77,1,4],[110,76,1,3],[111,77,1,4],[112,79,1,5],[113,74,1,2],[114,71,1,1],[115,72,1,2],[116,71,1,1],[117,72,1,2],[118,74,1,3],[119,72,1,2],[120,77,1,5],[121,72,1,2],[122,69,1,1],[123,71,1,2],[124,69,1,1],[125,71,1,2],[126,72,1,3],[127,71,1,2],[128,76,1,5],[129,71,1,2],[130,67,1,1],[131,69,1,2],[132,67,1,1],[133,69,1,2],[134,71,1,3],[135,69,1,2],[136,74,1,5],[137,69,1,2],[138,65,1,1],[139,67,1,2],[140,65,1,1],[141,67,1,2],[142,69,1,3],[143,67,1,2],[144,72,1,5],[145,67,1,2],[146,64,1,1],[147,65,1,2],[148,64,1,1],[149,65,1,2],[150,67,1,3],[151,65,1,2],[152,71,1,5],[153,65,1,2],[154,62,1,1],[155,64,1,1],[156,62,1,1],[157,64,1,1],[158,65,1,2],[159,64,1,1],[160,69,1,5],[161,64,1,2],[162,60,1,1],[163,62,1,1],[164,60,1,1],[165,62,1,1],[166,64,1,2],[167,62,1,1],[168,67,1,5],[169,62,1,2],[170,59,1,1],[171,60,1,1],[172,59,1,1],[173,60,1,1],[174,62,1,2],[175,60,1,1],[176,65,1,5],[177,60,1,2],[178,57,1,1],[179,59,1,1],[180,57,1,1],[181,59,1,1],[182,60,1,2],[183,59,1,1],[184,64,1,5],[185,59,1,2],[186,55,1,1],[187,57,1,1],[188,55,1,1],[189,57,1,1],[190,59,1,2],[191,57,1,1],[192,62,1,5],[193,57,1,2],[194,53,1,1],[195,55,1,1],[196,53,1,1],[197,55,1,1],[198,57,1,2],[199,55,1,1],[200,60,1,5],[201,55,1,2],[202,52,1,1],[203,53,1,1],[204,52,1,1],[205,53,1,1],[206,55,1,2],[207,53,1,1],[208,59,1,5],[209,53,1,2],[210,50,1,1],[211,52,1,1],[212,50,1,1],[213,52,1,1],[214,53,1,2],[215,52,1,1],[216,57,1,5],[217,52,1,2],[218,48,1,1],[219,50,1,1],[220,48,1,1],[221,50,1,1],[222,52,1,2],[223,50,1,1],[224,48,8,0]],"L":[[0,36,1,5],[1,40,1,3],[2,45,1,1],[3,43,1,2],[4,45,1,1],[5,43,1,2],[6,41,1,3],[7,43,1,2],[8,38,1,5],[9,41,1,3],[10,47,1,1],[11,45,1,2],[12,47,1,1],[13,45,1,2],[14,43,1,3],[15,45,1,2],[16,40,1,5],[17,43,1,3],[18,48,1,1],[19,47,1,2],[20,48,1,1],[21,47,1,2],[22,45,1,3],[23,47,1,2],[24,41,1,5],[25,45,1,3],[26,50,1,1],[27,48,1,2],[28,50,1,1],[29,48,1,2],[30,47,1,3],[31,48,1,2],[32,43,1,5],[33,47,1,3],[34,52,1,1],[35,50,1,2],[36,52,1,1],[37,50,1,2],[38,48,1,3],[39,50,1,2],[40,45,1,5],[41,48,1,3],[42,53,1,1],[43,52,1,1],[44,53,1,1],[45,52,1,1],[46,50,1,2],[47,52,1,1],[48,47,1,5],[49,50,1,3],[50,55,1,1],[51,53,1,1],[52,55,1,1],[53,53,1,1],[54,52,1,2],[55,53,1,1],[56,48,1,5],[57,52,1,3],[58,57,1,1],[59,55,1,1],[60,57,1,1],[61,55,1,1],[62,53,1,2],[63,55,1,1],[64,50,1,5],[65,53,1,3],[66,59,1,1],[67,57,1,1],[68,59,1,1],[69,57,1,1],[70,55,1,2],[71,57,1,1],[72,52,1,5],[73,55,1,3],[74,60,1,1],[75,59,1,1],[76,60,1,1],[77,59,1,1],[78,57,1,2],[79,59,1,1],[80,53,1,5],[81,57,1,3],[82,62,1,1],[83,60,1,1],[84,62,1,1],[85,60,1,1],[86,59,1,2],[87,60,1,1],[88,55,1,5],[89,59,1,3],[90,64,1,1],[91,62,1,1],[92,64,1,1],[93,62,1,1],[94,60,1,2],[95,62,1,1],[96,57,1,5],[97,60,1,3],[98,65,1,1],[99,64,1,1],[100,65,1,1],[101,64,1,1],[102,62,1,2],[103,64,1,1],[104,59,1,5],[105,62,1,3],[106,67,1,1],[107,65,1,1],[108,67,1,1],[109,65,1,1],[110,64,1,2],[111,65,1,1],[112,67,1,1],[113,62,1,3],[114,59,1,5],[115,60,1,4],[116,59,1,5],[117,60,1,4],[118,62,1,3],[119,60,1,4],[120,65,1,1],[121,60,1,3],[122,57,1,5],[123,59,1,4],[124,57,1,5],[125,59,1,4],[126,60,1,3],[127,59,1,4],[128,64,1,1],[129,59,1,3],[130,55,1,5],[131,57,1,4],[132,55,1,5],[133,57,1,4],[134,59,1,3],[135,57,1,4],[136,62,1,1],[137,57,1,3],[138,53,1,5],[139,55,1,4],[140,53,1,5],[141,55,1,4],[142,57,1,3],[143,55,1,4],[144,60,1,1],[145,55,1,3],[146,52,1,5],[147,53,1,4],[148,52,1,5],[149,53,1,4],[150,55,1,3],[151,53,1,4],[152,59,1,1],[153,53,1,3],[154,50,1,5],[155,52,1,4],[156,50,1,5],[157,52,1,4],[158,53,1,3],[159,52,1,4],[160,57,1,1],[161,52,1,3],[162,48,1,5],[163,50,1,4],[164,48,1,5],[165,50,1,4],[166,52,1,3],[167,50,1,4],[168,55,1,1],[169,50,1,3],[170,47,1,5],[171,48,1,4],[172,47,1,5],[173,48,1,4],[174,50,1,3],[175,48,1,4],[176,53,1,1],[177,48,1,3],[178,45,1,5],[179,47,1,4],[180,45,1,5],[181,47,1,4],[182,48,1,3],[183,47,1,4],[184,52,1,1],[185,47,1,3],[186,43,1,5],[187,45,1,4],[188,43,1,5],[189,45,1,4],[190,47,1,3],[191,45,1,4],[192,50,1,1],[193,45,1,3],[194,41,1,5],[195,43,1,4],[196,41,1,5],[197,43,1,4],[198,45,1,3],[199,43,1,4],[200,48,1,1],[201,43,1,3],[202,40,1,5],[203,41,1,4],[204,40,1,5],[205,41,1,4],[206,43,1,3],[207,41,1,4],[208,47,1,1],[209,41,1,3],[210,38,1,5],[211,40,1,4],[212,38,1,5],[213,40,1,4],[214,41,1,3],[215,40,1,4],[216,45,1,1],[217,40,1,3],[218,36,1,5],[219,38,1,4],[220,36,1,5],[221,38,1,4],[222,40,1,3],[223,38,1,4],[224,36,8,0]]},{"n":12,"len":240,"split":112,"R":[[0,55,1,5],[1,48,1,1],[2,52,1,3],[3,50,1,2],[4,48,1,1],[5,50,1,2],[6,52,1,3],[7,48,1,1],[8,59,1,5],[9,50,1,1],[10,53,1,3],[11,52,1,2],[12,50,1,1],[13,52,1,2],[14,53,1,3],[15,50,1,1],[16,60,1,5],[17,52,1,1],[18,55,1,3],[19,53,1,2],[20,52,1,1],[21,53,1,2],[22,55,1,3],[23,52,1,1],[24,62,1,5],[25,53,1,1],[26,57,1,3],[27,55,1,2],[28,53,1,1],[29,55,1,2],[30,57,1,3],[31,53,1,1],[32,64,1,5],[33,55,1,1],[34,59,1,3],[35,57,1,2],[36,55,1,1],[37,57,1,2],[38,59,1,3],[39,55,1,1],[40,65,1,5],[41,57,1,1],[42,60,1,3],[43,59,1,2],[44,57,1,1],[45,59,1,2],[46,60,1,3],[47,57,1,1],[48,67,1,5],[49,59,1,1],[50,62,1,3],[51,60,1,2],[52,59,1,1],[53,60,1,2],[54,62,1,3],[55,59,1,1],[56,69,1,5],[57,60,1,1],[58,64,1,3],[59,62,1,2],[60,60,1,1],[61,62,1,2],[62,64,1,3],[63,60,1,1],[64,71,1,5],[65,62,1,1],[66,65,1,3],[67,64,1,2],[68,62,1,1],[69,64,1,2],[70,65,1,3],[71,62,1,1],[72,72,1,5],[73,64,1,1],[74,67,1,3],[75,65,1,2],[76,64,1,1],[77,65,1,2],[78,67,1,3],[79,64,1,1],[80,74,1,5],[81,65,1,1],[82,69,1,3],[83,67,1,2],[84,65,1,1],[85,67,1,2],[86,69,1,3],[87,65,1,1],[88,76,1,5],[89,67,1,1],[90,71,1,3],[91,69,1,2],[92,67,1,1],[93,69,1,2],[94,71,1,3],[95,67,1,1],[96,77,1,5],[97,69,1,1],[98,72,1,3],[99,71,1,2],[100,69,1,1],[101,71,1,2],[102,72,1,3],[103,69,1,1],[104,79,1,5],[105,71,1,1],[106,74,1,3],[107,72,1,2],[108,71,1,1],[109,72,1,2],[110,74,1,3],[111,76,1,4],[112,71,1,1],[113,79,1,5],[114,76,1,3],[115,77,1,4],[116,79,1,5],[117,77,1,4],[118,76,1,3],[119,79,1,5],[120,69,1,1],[121,77,1,5],[122,74,1,3],[123,76,1,4],[124,77,1,5],[125,76,1,4],[126,74,1,3],[127,77,1,5],[128,67,1,1],[129,76,1,5],[130,72,1,3],[131,74,1,4],[132,76,1,5],[133,74,1,4],[134,72,1,3],[135,76,1,5],[136,65,1,1],[137,74,1,5],[138,71,1,3],[139,72,1,4],[140,74,1,5],[141,72,1,4],[142,71,1,3],[143,74,1,5],[144,64,1,1],[145,72,1,5],[146,69,1,3],[147,71,1,4],[148,72,1,5],[149,71,1,4],[150,69,1,3],[151,72,1,5],[152,62,1,1],[153,71,1,5],[154,67,1,3],[155,69,1,4],[156,71,1,5],[157,69,1,4],[158,67,1,3],[159,71,1,5],[160,60,1,1],[161,69,1,5],[162,65,1,3],[163,67,1,4],[164,69,1,5],[165,67,1,4],[166,65,1,3],[167,69,1,5],[168,59,1,1],[169,67,1,5],[170,64,1,3],[171,65,1,4],[172,67,1,5],[173,65,1,4],[174,64,1,3],[175,67,1,5],[176,57,1,1],[177,65,1,5],[178,62,1,3],[179,64,1,4],[180,65,1,5],[181,64,1,4],[182,62,1,3],[183,65,1,5],[184,55,1,1],[185,64,1,5],[186,60,1,3],[187,62,1,4],[188,64,1,5],[189,62,1,4],[190,60,1,3],[191,64,1,5],[192,53,1,1],[193,62,1,5],[194,59,1,3],[195,60,1,4],[196,62,1,5],[197,60,1,4],[198,59,1,3],[199,62,1,5],[200,52,1,1],[201,60,1,5],[202,57,1,3],[203,59,1,4],[204,60,1,5],[205,59,1,4],[206,57,1,3],[207,60,1,5],[208,50,1,1],[209,59,1,5],[210,55,1,3],[211,57,1,4],[212,59,1,5],[213,57,1,4],[214,55,1,3],[215,59,1,5],[216,48,1,1],[217,57,1,5],[218,53,1,3],[219,55,1,4],[220,57,1,5],[221,55,1,4],[222,53,1,3],[223,57,1,5],[224,48,1,1],[225,55,1,5],[226,52,1,3],[227,53,1,4],[228,55,1,5],[229,53,1,4],[230,52,1,3],[231,53,1,4],[232,48,8,0]],"L":[[0,43,1,1],[1,36,1,5],[2,40,1,3],[3,38,1,4],[4,36,1,5],[5,38,1,4],[6,40,1,3],[7,36,1,5],[8,47,1,1],[9,38,1,5],[10,41,1,3],[11,40,1,4],[12,38,1,5],[13,40,1,4],[14,41,1,3],[15,38,1,5],[16,48,1,1],[17,40,1,5],[18,43,1,3],[19,41,1,4],[20,40,1,5],[21,41,1,4],[22,43,1,3],[23,40,1,5],[24,50,1,1],[25,41,1,5],[26,45,1,3],[27,43,1,4],[28,41,1,5],[29,43,1,4],[30,45,1,3],[31,41,1,5],[32,52,1,1],[33,43,1,5],[34,47,1,3],[35,45,1,4],[36,43,1,5],[37,45,1,4],[38,47,1,3],[39,43,1,5],[40,53,1,1],[41,45,1,5],[42,48,1,3],[43,47,1,4],[44,45,1,5],[45,47,1,4],[46,48,1,3],[47,45,1,5],[48,55,1,1],[49,47,1,5],[50,50,1,3],[51,48,1,4],[52,47,1,5],[53,48,1,4],[54,50,1,3],[55,47,1,5],[56,57,1,1],[57,48,1,5],[58,52,1,3],[59,50,1,4],[60,48,1,5],[61,50,1,4],[62,52,1,3],[63,48,1,5],[64,59,1,1],[65,50,1,5],[66,53,1,3],[67,52,1,4],[68,50,1,5],[69,52,1,4],[70,53,1,3],[71,50,1,5],[72,60,1,1],[73,52,1,5],[74,55,1,3],[75,53,1,4],[76,52,1,5],[77,53,1,4],[78,55,1,3],[79,52,1,5],[80,62,1,1],[81,53,1,5],[82,57,1,3],[83,55,1,4],[84,53,1,5],[85,55,1,4],[86,57,1,3],[87,53,1,5],[88,64,1,1],[89,55,1,5],[90,59,1,3],[91,57,1,4],[92,55,1,5],[93,57,1,4],[94,59,1,3],[95,55,1,5],[96,65,1,1],[97,57,1,5],[98,60,1,3],[99,59,1,4],[100,57,1,5],[101,59,1,4],[102,60,1,3],[103,57,1,5],[104,67,1,1],[105,59,1,5],[106,62,1,3],[107,60,1,4],[108,59,1,5],[109,60,1,4],[110,62,1,3],[111,64,1,2],[112,59,1,5],[113,67,1,1],[114,64,1,3],[115,65,1,2],[116,67,1,1],[117,65,1,2],[118,64,1,3],[119,67,1,1],[120,57,1,5],[121,65,1,1],[122,62,1,3],[123,64,1,2],[124,65,1,1],[125,64,1,2],[126,62,1,3],[127,65,1,1],[128,55,1,5],[129,64,1,1],[130,60,1,3],[131,62,1,2],[132,64,1,1],[133,62,1,2],[134,60,1,3],[135,64,1,1],[136,53,1,5],[137,62,1,1],[138,59,1,3],[139,60,1,2],[140,62,1,1],[141,60,1,2],[142,59,1,3],[143,62,1,1],[144,52,1,5],[145,60,1,1],[146,57,1,3],[147,59,1,2],[148,60,1,1],[149,59,1,2],[150,57,1,3],[151,60,1,1],[152,50,1,5],[153,59,1,1],[154,55,1,3],[155,57,1,2],[156,59,1,1],[157,57,1,2],[158,55,1,3],[159,59,1,1],[160,48,1,5],[161,57,1,1],[162,53,1,3],[163,55,1,2],[164,57,1,1],[165,55,1,2],[166,53,1,3],[167,57,1,1],[168,47,1,5],[169,55,1,1],[170,52,1,3],[171,53,1,2],[172,55,1,1],[173,53,1,2],[174,52,1,3],[175,55,1,1],[176,45,1,5],[177,53,1,1],[178,50,1,3],[179,52,1,2],[180,53,1,1],[181,52,1,2],[182,50,1,3],[183,53,1,1],[184,43,1,5],[185,52,1,1],[186,48,1,3],[187,50,1,2],[188,52,1,1],[189,50,1,2],[190,48,1,3],[191,52,1,1],[192,41,1,5],[193,50,1,1],[194,47,1,3],[195,48,1,2],[196,50,1,1],[197,48,1,2],[198,47,1,3],[199,50,1,1],[200,40,1,5],[201,48,1,1],[202,45,1,3],[203,47,1,2],[204,48,1,1],[205,47,1,2],[206,45,1,3],[207,48,1,1],[208,38,1,5],[209,47,1,1],[210,43,1,3],[211,45,1,2],[212,47,1,1],[213,45,1,2],[214,43,1,3],[215,47,1,1],[216,36,1,5],[217,45,1,1],[218,41,1,3],[219,43,1,2],[220,45,1,1],[221,43,1,2],[222,41,1,3],[223,45,1,1],[224,36,1,5],[225,43,1,1],[226,40,1,3],[227,41,1,2],[228,43,1,1],[229,41,1,2],[230,40,1,3],[231,41,1,2],[232,36,8,0]]},{"n":13,"len":232,"split":112,"R":[[0,52,1,3],[1,48,1,1],[2,53,1,4],[3,50,1,2],[4,55,1,5],[5,52,1,3],[6,53,1,4],[7,55,1,5],[8,53,1,3],[9,50,1,1],[10,55,1,4],[11,52,1,2],[12,57,1,5],[13,53,1,3],[14,55,1,4],[15,57,1,5],[16,55,1,3],[17,52,1,1],[18,57,1,4],[19,53,1,2],[20,59,1,5],[21,55,1,3],[22,57,1,4],[23,59,1,5],[24,57,1,3],[25,53,1,1],[26,59,1,4],[27,55,1,2],[28,60,1,5],[29,57,1,3],[30,59,1,4],[31,60,1,5],[32,59,1,3],[33,55,1,1],[34,60,1,4],[35,57,1,2],[36,62,1,5],[37,59,1,3],[38,60,1,4],[39,62,1,5],[40,60,1,3],[41,57,1,1],[42,62,1,4],[43,59,1,2],[44,64,1,5],[45,60,1,3],[46,62,1,4],[47,64,1,5],[48,62,1,3],[49,59,1,1],[50,64,1,4],[51,60,1,2],[52,65,1,5],[53,62,1,3],[54,64,1,4],[55,65,1,5],[56,64,1,3],[57,60,1,1],[58,65,1,4],[59,62,1,2],[60,67,1,5],[61,64,1,3],[62,65,1,4],[63,67,1,5],[64,65,1,3],[65,62,1,1],[66,67,1,4],[67,64,1,2],[68,69,1,5],[69,65,1,3],[70,67,1,4],[71,69,1,5],[72,67,1,3],[73,64,1,1],[74,69,1,4],[75,65,1,2],[76,71,1,5],[77,67,1,3],[78,69,1,4],[79,71,1,5],[80,69,1,3],[81,65,1,1],[82,71,1,4],[83,67,1,2],[84,72,1,5],[85,69,1,3],[86,71,1,4],[87,72,1,5],[88,71,1,3],[89,67,1,1],[90,72,1,4],[91,69,1,2],[92,74,1,5],[93,71,1,3],[94,72,1,4],[95,74,1,5],[96,72,1,3],[97,69,1,1],[98,74,1,4],[99,71,1,2],[100,76,1,5],[101,72,1,3],[102,74,1,4],[103,76,1,5],[104,74,1,3],[105,71,1,1],[106,76,1,4],[107,72,1,2],[108,77,1,5],[109,74,1,3],[110,76,1,4],[111,77,1,5],[112,76,1,3],[113,79,1,5],[114,74,1,2],[115,77,1,4],[116,76,1,3],[117,72,1,1],[118,74,1,3],[119,76,1,4],[120,74,1,3],[121,77,1,5],[122,72,1,2],[123,76,1,4],[124,74,1,3],[125,71,1,1],[126,72,1,3],[127,74,1,4],[128,72,1,3],[129,76,1,5],[130,71,1,2],[131,74,1,4],[132,72,1,3],[133,69,1,1],[134,71,1,3],[135,72,1,4],[136,71,1,3],[137,74,1,5],[138,69,1,2],[139,72,1,4],[140,71,1,3],[141,67,1,1],[142,69,1,3],[143,71,1,4],[144,69,1,3],[145,72,1,5],[146,67,1,2],[147,71,1,4],[148,69,1,3],[149,65,1,1],[150,67,1,3],[151,69,1,4],[152,67,1,3],[153,71,1,5],[154,65,1,2],[155,69,1,4],[156,67,1,3],[157,64,1,1],[158,65,1,3],[159,67,1,4],[160,65,1,3],[161,69,1,5],[162,64,1,2],[163,67,1,4],[164,65,1,3],[165,62,1,1],[166,64,1,3],[167,65,1,4],[168,64,1,3],[169,67,1,5],[170,62,1,2],[171,65,1,4],[172,64,1,3],[173,60,1,1],[174,62,1,3],[175,64,1,4],[176,62,1,3],[177,65,1,5],[178,60,1,2],[179,64,1,4],[180,62,1,3],[181,59,1,1],[182,60,1,3],[183,62,1,4],[184,60,1,3],[185,64,1,5],[186,59,1,2],[187,62,1,4],[188,60,1,3],[189,57,1,1],[190,59,1,3],[191,60,1,4],[192,59,1,3],[193,62,1,5],[194,57,1,2],[195,60,1,4],[196,59,1,3],[197,55,1,1],[198,57,1,3],[199,59,1,4],[200,57,1,3],[201,60,1,5],[202,55,1,2],[203,59,1,4],[204,57,1,3],[205,53,1,1],[206,55,1,3],[207,57,1,4],[208,55,1,3],[209,59,1,5],[210,53,1,2],[211,57,1,4],[212,55,1,3],[213,52,1,1],[214,53,1,3],[215,55,1,4],[216,53,1,3],[217,57,1,5],[218,52,1,2],[219,55,1,4],[220,53,1,3],[221,50,1,1],[222,52,1,3],[223,53,1,4],[224,48,8,0]],"L":[[0,40,1,3],[1,36,1,5],[2,41,1,2],[3,38,1,4],[4,43,1,1],[5,40,1,3],[6,41,1,2],[7,43,1,1],[8,41,1,3],[9,38,1,5],[10,43,1,2],[11,40,1,4],[12,45,1,1],[13,41,1,3],[14,43,1,2],[15,45,1,1],[16,43,1,3],[17,40,1,5],[18,45,1,2],[19,41,1,4],[20,47,1,1],[21,43,1,3],[22,45,1,2],[23,47,1,1],[24,45,1,3],[25,41,1,5],[26,47,1,2],[27,43,1,4],[28,48,1,1],[29,45,1,3],[30,47,1,2],[31,48,1,1],[32,47,1,3],[33,43,1,5],[34,48,1,2],[35,45,1,4],[36,50,1,1],[37,47,1,3],[38,48,1,2],[39,50,1,1],[40,48,1,3],[41,45,1,5],[42,50,1,2],[43,47,1,4],[44,52,1,1],[45,48,1,3],[46,50,1,2],[47,52,1,1],[48,50,1,3],[49,47,1,5],[50,52,1,2],[51,48,1,4],[52,53,1,1],[53,50,1,3],[54,52,1,2],[55,53,1,1],[56,52,1,3],[57,48,1,5],[58,53,1,2],[59,50,1,4],[60,55,1,1],[61,52,1,3],[62,53,1,2],[63,55,1,1],[64,53,1,3],[65,50,1,5],[66,55,1,2],[67,52,1,4],[68,57,1,1],[69,53,1,3],[70,55,1,2],[71,57,1,1],[72,55,1,3],[73,52,1,5],[74,57,1,2],[75,53,1,4],[76,59,1,1],[77,55,1,3],[78,57,1,2],[79,59,1,1],[80,57,1,3],[81,53,1,5],[82,59,1,2],[83,55,1,4],[84,60,1,1],[85,57,1,3],[86,59,1,2],[87,60,1,1],[88,59,1,3],[89,55,1,5],[90,60,1,2],[91,57,1,4],[92,62,1,1],[93,59,1,3],[94,60,1,2],[95,62,1,1],[96,60,1,3],[97,57,1,5],[98,62,1,2],[99,59,1,4],[100,64,1,1],[101,60,1,3],[102,62,1,2],[103,64,1,1],[104,62,1,3],[105,59,1,5],[106,64,1,2],[107,60,1,4],[108,65,1,1],[109,62,1,3],[110,64,1,2],[111,65,1,1],[112,64,1,3],[113,67,1,1],[114,62,1,4],[115,65,1,2],[116,64,1,3],[117,60,1,5],[118,62,1,3],[119,64,1,2],[120,62,1,3],[121,65,1,1],[122,60,1,4],[123,64,1,2],[124,62,1,3],[125,59,1,5],[126,60,1,3],[127,62,1,2],[128,60,1,3],[129,64,1,1],[130,59,1,4],[131,62,1,2],[132,60,1,3],[133,57,1,5],[134,59,1,3],[135,60,1,2],[136,59,1,3],[137,62,1,1],[138,57,1,4],[139,60,1,2],[140,59,1,3],[141,55,1,5],[142,57,1,3],[143,59,1,2],[144,57,1,3],[145,60,1,1],[146,55,1,4],[147,59,1,2],[148,57,1,3],[149,53,1,5],[150,55,1,3],[151,57,1,2],[152,55,1,3],[153,59,1,1],[154,53,1,4],[155,57,1,2],[156,55,1,3],[157,52,1,5],[158,53,1,3],[159,55,1,2],[160,53,1,3],[161,57,1,1],[162,52,1,4],[163,55,1,2],[164,53,1,3],[165,50,1,5],[166,52,1,3],[167,53,1,2],[168,52,1,3],[169,55,1,1],[170,50,1,4],[171,53,1,2],[172,52,1,3],[173,48,1,5],[174,50,1,3],[175,52,1,2],[176,50,1,3],[177,53,1,1],[178,48,1,4],[179,52,1,2],[180,50,1,3],[181,47,1,5],[182,48,1,3],[183,50,1,2],[184,48,1,3],[185,52,1,1],[186,47,1,4],[187,50,1,2],[188,48,1,3],[189,45,1,5],[190,47,1,3],[191,48,1,2],[192,47,1,3],[193,50,1,1],[194,45,1,4],[195,48,1,2],[196,47,1,3],[197,43,1,5],[198,45,1,3],[199,47,1,2],[200,45,1,3],[201,48,1,1],[202,43,1,4],[203,47,1,2],[204,45,1,3],[205,41,1,5],[206,43,1,3],[207,45,1,2],[208,43,1,3],[209,47,1,1],[210,41,1,4],[211,45,1,2],[212,43,1,3],[213,40,1,5],[214,41,1,3],[215,43,1,2],[216,41,1,3],[217,45,1,1],[218,40,1,4],[219,43,1,2],[220,41,1,3],[221,38,1,5],[222,40,1,3],[223,41,1,2],[224,36,8,0]]},{"n":14,"len":232,"split":112,"R":[[0,48,1,1],[1,50,1,2],[2,53,1,4],[3,52,1,3],[4,53,1,4],[5,52,1,3],[6,55,1,5],[7,53,1,4],[8,50,1,1],[9,52,1,2],[10,55,1,4],[11,53,1,3],[12,55,1,4],[13,53,1,3],[14,57,1,5],[15,55,1,4],[16,52,1,1],[17,53,1,2],[18,57,1,4],[19,55,1,3],[20,57,1,4],[21,55,1,3],[22,59,1,5],[23,57,1,4],[24,53,1,1],[25,55,1,2],[26,59,1,4],[27,57,1,3],[28,59,1,4],[29,57,1,3],[30,60,1,5],[31,59,1,4],[32,55,1,1],[33,57,1,2],[34,60,1,4],[35,59,1,3],[36,60,1,4],[37,59,1,3],[38,62,1,5],[39,60,1,4],[40,57,1,1],[41,59,1,2],[42,62,1,4],[43,60,1,3],[44,62,1,4],[45,60,1,3],[46,64,1,5],[47,62,1,4],[48,59,1,1],[49,60,1,2],[50,64,1,4],[51,62,1,3],[52,64,1,4],[53,62,1,3],[54,65,1,5],[55,64,1,4],[56,60,1,1],[57,62,1,2],[58,65,1,4],[59,64,1,3],[60,65,1,4],[61,64,1,3],[62,67,1,5],[63,65,1,4],[64,62,1,1],[65,64,1,2],[66,67,1,4],[67,65,1,3],[68,67,1,4],[69,65,1,3],[70,69,1,5],[71,67,1,4],[72,64,1,1],[73,65,1,2],[74,69,1,4],[75,67,1,3],[76,69,1,4],[77,67,1,3],[78,71,1,5],[79,69,1,4],[80,65,1,1],[81,67,1,2],[82,71,1,4],[83,69,1,3],[84,71,1,4],[85,69,1,3],[86,72,1,5],[87,71,1,4],[88,67,1,1],[89,69,1,2],[90,72,1,4],[91,71,1,3],[92,72,1,4],[93,71,1,3],[94,74,1,5],[95,72,1,4],[96,69,1,1],[97,71,1,2],[98,74,1,4],[99,72,1,3],[100,74,1,4],[101,72,1,3],[102,76,1,5],[103,74,1,4],[104,71,1,1],[105,72,1,2],[106,76,1,4],[107,74,1,3],[108,76,1,4],[109,74,1,3],[110,77,1,5],[111,76,1,3],[112,79,1,5],[113,77,1,4],[114,74,1,2],[115,76,1,3],[116,74,1,2],[117,76,1,3],[118,72,1,1],[119,74,1,3],[120,77,1,5],[121,76,1,4],[122,72,1,2],[123,74,1,3],[124,72,1,2],[125,74,1,3],[126,71,1,1],[127,72,1,3],[128,76,1,5],[129,74,1,4],[130,71,1,2],[131,72,1,3],[132,71,1,2],[133,72,1,3],[134,69,1,1],[135,71,1,3],[136,74,1,5],[137,72,1,4],[138,69,1,2],[139,71,1,3],[140,69,1,2],[141,71,1,3],[142,67,1,1],[143,69,1,3],[144,72,1,5],[145,71,1,4],[146,67,1,2],[147,69,1,3],[148,67,1,2],[149,69,1,3],[150,65,1,1],[151,67,1,3],[152,71,1,5],[153,69,1,4],[154,65,1,2],[155,67,1,3],[156,65,1,2],[157,67,1,3],[158,64,1,1],[159,65,1,3],[160,69,1,5],[161,67,1,4],[162,64,1,2],[163,65,1,3],[164,64,1,2],[165,65,1,3],[166,62,1,1],[167,64,1,3],[168,67,1,5],[169,65,1,4],[170,62,1,2],[171,64,1,3],[172,62,1,2],[173,64,1,3],[174,60,1,1],[175,62,1,3],[176,65,1,5],[177,64,1,4],[178,60,1,2],[179,62,1,3],[180,60,1,2],[181,62,1,3],[182,59,1,1],[183,60,1,3],[184,64,1,5],[185,62,1,4],[186,59,1,2],[187,60,1,3],[188,59,1,2],[189,60,1,3],[190,57,1,1],[191,59,1,3],[192,62,1,5],[193,60,1,4],[194,57,1,2],[195,59,1,3],[196,57,1,2],[197,59,1,3],[198,55,1,1],[199,57,1,3],[200,60,1,5],[201,59,1,4],[202,55,1,2],[203,57,1,3],[204,55,1,2],[205,57,1,3],[206,53,1,1],[207,55,1,3],[208,59,1,5],[209,57,1,4],[210,53,1,2],[211,55,1,3],[212,53,1,2],[213,55,1,3],[214,52,1,1],[215,53,1,3],[216,57,1,5],[217,55,1,4],[218,52,1,2],[219,53,1,3],[220,52,1,2],[221,53,1,3],[222,50,1,1],[223,52,1,3],[224,48,8,0]],"L":[[0,36,1,5],[1,38,1,4],[2,41,1,2],[3,40,1,3],[4,41,1,2],[5,40,1,3],[6,43,1,1],[7,41,1,3],[8,38,1,5],[9,40,1,4],[10,43,1,2],[11,41,1,3],[12,43,1,2],[13,41,1,3],[14,45,1,1],[15,43,1,3],[16,40,1,5],[17,41,1,4],[18,45,1,2],[19,43,1,3],[20,45,1,2],[21,43,1,3],[22,47,1,1],[23,45,1,3],[24,41,1,5],[25,43,1,4],[26,47,1,2],[27,45,1,3],[28,47,1,2],[29,45,1,3],[30,48,1,1],[31,47,1,3],[32,43,1,5],[33,45,1,4],[34,48,1,2],[35,47,1,3],[36,48,1,2],[37,47,1,3],[38,50,1,1],[39,48,1,3],[40,45,1,5],[41,47,1,4],[42,50,1,2],[43,48,1,3],[44,50,1,2],[45,48,1,3],[46,52,1,1],[47,50,1,3],[48,47,1,5],[49,48,1,4],[50,52,1,2],[51,50,1,3],[52,52,1,2],[53,50,1,3],[54,53,1,1],[55,52,1,3],[56,48,1,5],[57,50,1,4],[58,53,1,2],[59,52,1,3],[60,53,1,2],[61,52,1,3],[62,55,1,1],[63,53,1,3],[64,50,1,5],[65,52,1,4],[66,55,1,2],[67,53,1,3],[68,55,1,2],[69,53,1,3],[70,57,1,1],[71,55,1,3],[72,52,1,5],[73,53,1,4],[74,57,1,2],[75,55,1,3],[76,57,1,2],[77,55,1,3],[78,59,1,1],[79,57,1,3],[80,53,1,5],[81,55,1,4],[82,59,1,2],[83,57,1,3],[84,59,1,2],[85,57,1,3],[86,60,1,1],[87,59,1,3],[88,55,1,5],[89,57,1,4],[90,60,1,2],[91,59,1,3],[92,60,1,2],[93,59,1,3],[94,62,1,1],[95,60,1,3],[96,57,1,5],[97,59,1,4],[98,62,1,2],[99,60,1,3],[100,62,1,2],[101,60,1,3],[102,64,1,1],[103,62,1,3],[104,59,1,5],[105,60,1,4],[106,64,1,2],[107,62,1,3],[108,64,1,2],[109,62,1,3],[110,65,1,1],[111,64,1,3],[112,67,1,1],[113,65,1,2],[114,62,1,4],[115,64,1,3],[116,62,1,4],[117,64,1,3],[118,60,1,5],[119,62,1,4],[120,65,1,1],[121,64,1,2],[122,60,1,4],[123,62,1,3],[124,60,1,4],[125,62,1,3],[126,59,1,5],[127,60,1,4],[128,64,1,1],[129,62,1,2],[130,59,1,4],[131,60,1,3],[132,59,1,4],[133,60,1,3],[134,57,1,5],[135,59,1,4],[136,62,1,1],[137,60,1,2],[138,57,1,4],[139,59,1,3],[140,57,1,4],[141,59,1,3],[142,55,1,5],[143,57,1,4],[144,60,1,1],[145,59,1,2],[146,55,1,4],[147,57,1,3],[148,55,1,4],[149,57,1,3],[150,53,1,5],[151,55,1,4],[152,59,1,1],[153,57,1,2],[154,53,1,4],[155,55,1,3],[156,53,1,4],[157,55,1,3],[158,52,1,5],[159,53,1,4],[160,57,1,1],[161,55,1,2],[162,52,1,4],[163,53,1,3],[164,52,1,4],[165,53,1,3],[166,50,1,5],[167,52,1,4],[168,55,1,1],[169,53,1,2],[170,50,1,4],[171,52,1,3],[172,50,1,4],[173,52,1,3],[174,48,1,5],[175,50,1,4],[176,53,1,1],[177,52,1,2],[178,48,1,4],[179,50,1,3],[180,48,1,4],[181,50,1,3],[182,47,1,5],[183,48,1,4],[184,52,1,1],[185,50,1,2],[186,47,1,4],[187,48,1,3],[188,47,1,4],[189,48,1,3],[190,45,1,5],[191,47,1,4],[192,50,1,1],[193,48,1,2],[194,45,1,4],[195,47,1,3],[196,45,1,4],[197,47,1,3],[198,43,1,5],[199,45,1,4],[200,48,1,1],[201,47,1,2],[202,43,1,4],[203,45,1,3],[204,43,1,4],[205,45,1,3],[206,41,1,5],[207,43,1,4],[208,47,1,1],[209,45,1,2],[210,41,1,4],[211,43,1,3],[212,41,1,4],[213,43,1,3],[214,40,1,5],[215,41,1,4],[216,45,1,1],[217,43,1,2],[218,40,1,4],[219,41,1,3],[220,40,1,4],[221,41,1,3],[222,38,1,5],[223,40,1,3],[224,36,8,0]]},{"n":15,"len":232,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,50,1,1],[3,53,1,3],[4,52,1,2],[5,55,1,4],[6,53,1,3],[7,57,1,5],[8,50,1,1],[9,53,1,2],[10,52,1,1],[11,55,1,3],[12,53,1,2],[13,57,1,4],[14,55,1,3],[15,59,1,5],[16,52,1,1],[17,55,1,2],[18,53,1,1],[19,57,1,3],[20,55,1,2],[21,59,1,4],[22,57,1,3],[23,60,1,5],[24,53,1,1],[25,57,1,2],[26,55,1,1],[27,59,1,3],[28,57,1,2],[29,60,1,4],[30,59,1,3],[31,62,1,5],[32,55,1,1],[33,59,1,2],[34,57,1,1],[35,60,1,3],[36,59,1,2],[37,62,1,4],[38,60,1,3],[39,64,1,5],[40,57,1,1],[41,60,1,2],[42,59,1,1],[43,62,1,3],[44,60,1,2],[45,64,1,4],[46,62,1,3],[47,65,1,5],[48,59,1,1],[49,62,1,2],[50,60,1,1],[51,64,1,3],[52,62,1,2],[53,65,1,4],[54,64,1,3],[55,67,1,5],[56,60,1,1],[57,64,1,2],[58,62,1,1],[59,65,1,3],[60,64,1,2],[61,67,1,4],[62,65,1,3],[63,69,1,5],[64,62,1,1],[65,65,1,2],[66,64,1,1],[67,67,1,3],[68,65,1,2],[69,69,1,4],[70,67,1,3],[71,71,1,5],[72,64,1,1],[73,67,1,2],[74,65,1,1],[75,69,1,3],[76,67,1,2],[77,71,1,4],[78,69,1,3],[79,72,1,5],[80,65,1,1],[81,69,1,2],[82,67,1,1],[83,71,1,3],[84,69,1,2],[85,72,1,4],[86,71,1,3],[87,74,1,5],[88,67,1,1],[89,71,1,2],[90,69,1,1],[91,72,1,3],[92,71,1,2],[93,74,1,4],[94,72,1,3],[95,76,1,5],[96,69,1,1],[97,72,1,2],[98,71,1,1],[99,74,1,3],[100,72,1,2],[101,76,1,4],[102,74,1,3],[103,77,1,5],[104,71,1,1],[105,74,1,2],[106,72,1,1],[107,76,1,3],[108,74,1,2],[109,77,1,4],[110,76,1,3],[111,77,1,4],[112,79,1,5],[113,76,1,3],[114,77,1,4],[115,74,1,2],[116,76,1,3],[117,72,1,1],[118,74,1,2],[119,71,1,1],[120,77,1,5],[121,74,1,3],[122,76,1,4],[123,72,1,2],[124,74,1,3],[125,71,1,1],[126,72,1,2],[127,69,1,1],[128,76,1,5],[129,72,1,3],[130,74,1,4],[131,71,1,2],[132,72,1,3],[133,69,1,1],[134,71,1,2],[135,67,1,1],[136,74,1,5],[137,71,1,3],[138,72,1,4],[139,69,1,2],[140,71,1,3],[141,67,1,1],[142,69,1,2],[143,65,1,1],[144,72,1,5],[145,69,1,3],[146,71,1,4],[147,67,1,2],[148,69,1,3],[149,65,1,1],[150,67,1,2],[151,64,1,1],[152,71,1,5],[153,67,1,3],[154,69,1,4],[155,65,1,2],[156,67,1,3],[157,64,1,1],[158,65,1,2],[159,62,1,1],[160,69,1,5],[161,65,1,3],[162,67,1,4],[163,64,1,2],[164,65,1,3],[165,62,1,1],[166,64,1,2],[167,60,1,1],[168,67,1,5],[169,64,1,3],[170,65,1,4],[171,62,1,2],[172,64,1,3],[173,60,1,1],[174,62,1,2],[175,59,1,1],[176,65,1,5],[177,62,1,3],[178,64,1,4],[179,60,1,2],[180,62,1,3],[181,59,1,1],[182,60,1,2],[183,57,1,1],[184,64,1,5],[185,60,1,3],[186,62,1,4],[187,59,1,2],[188,60,1,3],[189,57,1,1],[190,59,1,2],[191,55,1,1],[192,62,1,5],[193,59,1,3],[194,60,1,4],[195,57,1,2],[196,59,1,3],[197,55,1,1],[198,57,1,2],[199,53,1,1],[200,60,1,5],[201,57,1,3],[202,59,1,4],[203,55,1,2],[204,57,1,3],[205,53,1,1],[206,55,1,2],[207,52,1,1],[208,59,1,5],[209,55,1,3],[210,57,1,4],[211,53,1,2],[212,55,1,3],[213,52,1,1],[214,53,1,2],[215,50,1,1],[216,57,1,5],[217,53,1,3],[218,55,1,4],[219,52,1,2],[220,53,1,3],[221,50,1,1],[222,52,1,3],[223,50,1,2],[224,48,8,0]],"L":[[0,36,1,5],[1,40,1,3],[2,38,1,4],[3,41,1,2],[4,40,1,3],[5,43,1,1],[6,41,1,2],[7,45,1,1],[8,38,1,5],[9,41,1,3],[10,40,1,4],[11,43,1,2],[12,41,1,3],[13,45,1,1],[14,43,1,2],[15,47,1,1],[16,40,1,5],[17,43,1,3],[18,41,1,4],[19,45,1,2],[20,43,1,3],[21,47,1,1],[22,45,1,2],[23,48,1,1],[24,41,1,5],[25,45,1,3],[26,43,1,4],[27,47,1,2],[28,45,1,3],[29,48,1,1],[30,47,1,2],[31,50,1,1],[32,43,1,5],[33,47,1,3],[34,45,1,4],[35,48,1,2],[36,47,1,3],[37,50,1,1],[38,48,1,2],[39,52,1,1],[40,45,1,5],[41,48,1,3],[42,47,1,4],[43,50,1,2],[44,48,1,3],[45,52,1,1],[46,50,1,2],[47,53,1,1],[48,47,1,5],[49,50,1,3],[50,48,1,4],[51,52,1,2],[52,50,1,3],[53,53,1,1],[54,52,1,2],[55,55,1,1],[56,48,1,5],[57,52,1,3],[58,50,1,4],[59,53,1,2],[60,52,1,3],[61,55,1,1],[62,53,1,2],[63,57,1,1],[64,50,1,5],[65,53,1,3],[66,52,1,4],[67,55,1,2],[68,53,1,3],[69,57,1,1],[70,55,1,2],[71,59,1,1],[72,52,1,5],[73,55,1,3],[74,53,1,4],[75,57,1,2],[76,55,1,3],[77,59,1,1],[78,57,1,2],[79,60,1,1],[80,53,1,5],[81,57,1,3],[82,55,1,4],[83,59,1,2],[84,57,1,3],[85,60,1,1],[86,59,1,2],[87,62,1,1],[88,55,1,5],[89,59,1,3],[90,57,1,4],[91,60,1,2],[92,59,1,3],[93,62,1,1],[94,60,1,2],[95,64,1,1],[96,57,1,5],[97,60,1,3],[98,59,1,4],[99,62,1,2],[100,60,1,3],[101,64,1,1],[102,62,1,2],[103,65,1,1],[104,59,1,5],[105,62,1,3],[106,60,1,4],[107,64,1,2],[108,62,1,3],[109,65,1,1],[110,64,1,2],[111,65,1,1],[112,67,1,1],[113,64,1,2],[114,65,1,1],[115,62,1,3],[116,64,1,2],[117,60,1,4],[118,62,1,3],[119,59,1,5],[120,65,1,1],[121,62,1,2],[122,64,1,1],[123,60,1,3],[124,62,1,2],[125,59,1,4],[126,60,1,3],[127,57,1,5],[128,64,1,1],[129,60,1,2],[130,62,1,1],[131,59,1,3],[132,60,1,2],[133,57,1,4],[134,59,1,3],[135,55,1,5],[136,62,1,1],[137,59,1,2],[138,60,1,1],[139,57,1,3],[140,59,1,2],[141,55,1,4],[142,57,1,3],[143,53,1,5],[144,60,1,1],[145,57,1,2],[146,59,1,1],[147,55,1,3],[148,57,1,2],[149,53,1,4],[150,55,1,3],[151,52,1,5],[152,59,1,1],[153,55,1,2],[154,57,1,1],[155,53,1,3],[156,55,1,2],[157,52,1,4],[158,53,1,3],[159,50,1,5],[160,57,1,1],[161,53,1,2],[162,55,1,1],[163,52,1,3],[164,53,1,2],[165,50,1,4],[166,52,1,3],[167,48,1,5],[168,55,1,1],[169,52,1,2],[170,53,1,1],[171,50,1,3],[172,52,1,2],[173,48,1,4],[174,50,1,3],[175,47,1,5],[176,53,1,1],[177,50,1,2],[178,52,1,1],[179,48,1,3],[180,50,1,2],[181,47,1,4],[182,48,1,3],[183,45,1,5],[184,52,1,1],[185,48,1,2],[186,50,1,1],[187,47,1,3],[188,48,1,2],[189,45,1,4],[190,47,1,3],[191,43,1,5],[192,50,1,1],[193,47,1,2],[194,48,1,1],[195,45,1,3],[196,47,1,2],[197,43,1,4],[198,45,1,3],[199,41,1,5],[200,48,1,1],[201,45,1,2],[202,47,1,1],[203,43,1,3],[204,45,1,2],[205,41,1,4],[206,43,1,3],[207,40,1,5],[208,47,1,1],[209,43,1,2],[210,45,1,1],[211,41,1,3],[212,43,1,2],[213,40,1,4],[214,41,1,3],[215,38,1,5],[216,45,1,1],[217,41,1,2],[218,43,1,1],[219,40,1,3],[220,41,1,2],[221,38,1,4],[222,40,1,3],[223,38,1,4],[224,36,8,0]]},{"n":16,"len":232,"split":112,"R":[[0,48,1,1],[1,52,1,3],[2,50,1,2],[3,52,1,3],[4,57,1,5],[5,55,1,4],[6,53,1,3],[7,55,1,4],[8,50,1,1],[9,53,1,3],[10,52,1,2],[11,53,1,3],[12,59,1,5],[13,57,1,4],[14,55,1,3],[15,57,1,4],[16,52,1,1],[17,55,1,3],[18,53,1,2],[19,55,1,3],[20,60,1,5],[21,59,1,4],[22,57,1,3],[23,59,1,4],[24,53,1,1],[25,57,1,3],[26,55,1,2],[27,57,1,3],[28,62,1,5],[29,60,1,4],[30,59,1,3],[31,60,1,4],[32,55,1,1],[33,59,1,3],[34,57,1,2],[35,59,1,3],[36,64,1,5],[37,62,1,4],[38,60,1,3],[39,62,1,4],[40,57,1,1],[41,60,1,3],[42,59,1,2],[43,60,1,3],[44,65,1,5],[45,64,1,4],[46,62,1,3],[47,64,1,4],[48,59,1,1],[49,62,1,3],[50,60,1,2],[51,62,1,3],[52,67,1,5],[53,65,1,4],[54,64,1,3],[55,65,1,4],[56,60,1,1],[57,64,1,3],[58,62,1,2],[59,64,1,3],[60,69,1,5],[61,67,1,4],[62,65,1,3],[63,67,1,4],[64,62,1,1],[65,65,1,3],[66,64,1,2],[67,65,1,3],[68,71,1,5],[69,69,1,4],[70,67,1,3],[71,69,1,4],[72,64,1,1],[73,67,1,3],[74,65,1,2],[75,67,1,3],[76,72,1,5],[77,71,1,4],[78,69,1,3],[79,71,1,4],[80,65,1,1],[81,69,1,3],[82,67,1,2],[83,69,1,3],[84,74,1,5],[85,72,1,4],[86,71,1,3],[87,72,1,4],[88,67,1,1],[89,71,1,3],[90,69,1,2],[91,71,1,3],[92,76,1,5],[93,74,1,4],[94,72,1,3],[95,74,1,4],[96,69,1,1],[97,72,1,3],[98,71,1,2],[99,72,1,3],[100,77,1,5],[101,76,1,4],[102,74,1,3],[103,76,1,4],[104,71,1,1],[105,74,1,3],[106,72,1,2],[107,74,1,3],[108,79,1,5],[109,77,1,4],[110,76,1,3],[111,77,1,4],[112,79,1,5],[113,74,1,2],[114,76,1,3],[115,74,1,2],[116,71,1,1],[117,72,1,2],[118,74,1,3],[119,72,1,2],[120,77,1,5],[121,72,1,2],[122,74,1,3],[123,72,1,2],[124,69,1,1],[125,71,1,2],[126,72,1,3],[127,71,1,2],[128,76,1,5],[129,71,1,2],[130,72,1,3],[131,71,1,2],[132,67,1,1],[133,69,1,2],[134,71,1,3],[135,69,1,2],[136,74,1,5],[137,69,1,2],[138,71,1,3],[139,69,1,2],[140,65,1,1],[141,67,1,2],[142,69,1,3],[143,67,1,2],[144,72,1,5],[145,67,1,2],[146,69,1,3],[147,67,1,2],[148,64,1,1],[149,65,1,1],[150,67,1,2],[151,65,1,1],[152,71,1,5],[153,65,1,2],[154,67,1,3],[155,65,1,2],[156,62,1,1],[157,64,1,1],[158,65,1,2],[159,64,1,1],[160,69,1,5],[161,64,1,2],[162,65,1,3],[163,64,1,2],[164,60,1,1],[165,62,1,1],[166,64,1,2],[167,62,1,1],[168,67,1,5],[169,62,1,2],[170,64,1,3],[171,62,1,2],[172,59,1,1],[173,60,1,1],[174,62,1,2],[175,60,1,1],[176,65,1,5],[177,60,1,2],[178,62,1,3],[179,60,1,2],[180,57,1,1],[181,59,1,1],[182,60,1,2],[183,59,1,1],[184,64,1,5],[185,59,1,2],[186,60,1,3],[187,59,1,2],[188,55,1,1],[189,57,1,1],[190,59,1,2],[191,57,1,1],[192,62,1,5],[193,57,1,2],[194,59,1,3],[195,57,1,2],[196,53,1,1],[197,55,1,1],[198,57,1,2],[199,55,1,1],[200,60,1,5],[201,55,1,2],[202,57,1,3],[203,55,1,2],[204,52,1,1],[205,53,1,1],[206,55,1,2],[207,53,1,1],[208,59,1,5],[209,53,1,2],[210,55,1,3],[211,53,1,2],[212,50,1,1],[213,52,1,1],[214,53,1,2],[215,52,1,1],[216,57,1,5],[217,52,1,2],[218,53,1,3],[219,52,1,2],[220,48,1,1],[221,50,1,1],[222,52,1,2],[223,50,1,1],[224,48,8,0]],"L":[[0,36,1,5],[1,40,1,3],[2,38,1,4],[3,40,1,3],[4,45,1,1],[5,43,1,2],[6,41,1,3],[7,43,1,2],[8,38,1,5],[9,41,1,3],[10,40,1,4],[11,41,1,3],[12,47,1,1],[13,45,1,2],[14,43,1,3],[15,45,1,2],[16,40,1,5],[17,43,1,3],[18,41,1,4],[19,43,1,3],[20,48,1,1],[21,47,1,2],[22,45,1,3],[23,47,1,2],[24,41,1,5],[25,45,1,3],[26,43,1,4],[27,45,1,3],[28,50,1,1],[29,48,1,2],[30,47,1,3],[31,48,1,2],[32,43,1,5],[33,47,1,3],[34,45,1,4],[35,47,1,3],[36,52,1,1],[37,50,1,2],[38,48,1,3],[39,50,1,2],[40,45,1,5],[41,48,1,3],[42,47,1,4],[43,48,1,3],[44,53,1,1],[45,52,1,2],[46,50,1,3],[47,52,1,2],[48,47,1,5],[49,50,1,3],[50,48,1,4],[51,50,1,3],[52,55,1,1],[53,53,1,2],[54,52,1,3],[55,53,1,2],[56,48,1,5],[57,52,1,3],[58,50,1,4],[59,52,1,3],[60,57,1,1],[61,55,1,2],[62,53,1,3],[63,55,1,2],[64,50,1,5],[65,53,1,3],[66,52,1,4],[67,53,1,3],[68,59,1,1],[69,57,1,2],[70,55,1,3],[71,57,1,2],[72,52,1,5],[73,55,1,3],[74,53,1,4],[75,55,1,3],[76,60,1,1],[77,59,1,2],[78,57,1,3],[79,59,1,2],[80,53,1,5],[81,57,1,3],[82,55,1,4],[83,57,1,3],[84,62,1,1],[85,60,1,2],[86,59,1,3],[87,60,1,2],[88,55,1,5],[89,59,1,3],[90,57,1,4],[91,59,1,3],[92,64,1,1],[93,62,1,2],[94,60,1,3],[95,62,1,2],[96,57,1,5],[97,60,1,3],[98,59,1,4],[99,60,1,3],[100,65,1,1],[101,64,1,2],[102,62,1,3],[103,64,1,2],[104,59,1,5],[105,62,1,3],[106,60,1,4],[107,62,1,3],[108,67,1,1],[109,65,1,2],[110,64,1,3],[111,65,1,2],[112,67,1,1],[113,62,1,3],[114,64,1,2],[115,62,1,3],[116,59,1,5],[117,60,1,4],[118,62,1,3],[119,60,1,4],[120,65,1,1],[121,60,1,3],[122,62,1,2],[123,60,1,3],[124,57,1,5],[125,59,1,4],[126,60,1,3],[127,59,1,4],[128,64,1,1],[129,59,1,3],[130,60,1,2],[131,59,1,3],[132,55,1,5],[133,57,1,4],[134,59,1,3],[135,57,1,4],[136,62,1,1],[137,57,1,3],[138,59,1,2],[139,57,1,3],[140,53,1,5],[141,55,1,4],[142,57,1,3],[143,55,1,4],[144,60,1,1],[145,55,1,3],[146,57,1,2],[147,55,1,3],[148,52,1,5],[149,53,1,4],[150,55,1,3],[151,53,1,4],[152,59,1,1],[153,53,1,3],[154,55,1,2],[155,53,1,3],[156,50,1,5],[157,52,1,4],[158,53,1,3],[159,52,1,4],[160,57,1,1],[161,52,1,3],[162,53,1,2],[163,52,1,3],[164,48,1,5],[165,50,1,4],[166,52,1,3],[167,50,1,4],[168,55,1,1],[169,50,1,3],[170,52,1,2],[171,50,1,3],[172,47,1,5],[173,48,1,4],[174,50,1,3],[175,48,1,4],[176,53,1,1],[177,48,1,3],[178,50,1,2],[179,48,1,3],[180,45,1,5],[181,47,1,4],[182,48,1,3],[183,47,1,4],[184,52,1,1],[185,47,1,3],[186,48,1,2],[187,47,1,3],[188,43,1,5],[189,45,1,4],[190,47,1,3],[191,45,1,4],[192,50,1,1],[193,45,1,3],[194,47,1,2],[195,45,1,3],[196,41,1,5],[197,43,1,4],[198,45,1,3],[199,43,1,4],[200,48,1,1],[201,43,1,3],[202,45,1,2],[203,43,1,3],[204,40,1,5],[205,41,1,4],[206,43,1,3],[207,41,1,4],[208,47,1,1],[209,41,1,3],[210,43,1,2],[211,41,1,3],[212,38,1,5],[213,40,1,4],[214,41,1,3],[215,40,1,4],[216,45,1,1],[217,40,1,3],[218,41,1,2],[219,40,1,3],[220,36,1,5],[221,38,1,4],[222,40,1,3],[223,38,1,4],[224,36,8,0]]},{"n":17,"len":224,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,57,1,4],[3,55,1,3],[4,59,1,5],[5,57,1,4],[6,55,1,3],[7,57,1,4],[8,50,1,1],[9,53,1,2],[10,59,1,4],[11,57,1,3],[12,60,1,5],[13,59,1,4],[14,57,1,3],[15,59,1,4],[16,52,1,1],[17,55,1,2],[18,60,1,4],[19,59,1,3],[20,62,1,5],[21,60,1,4],[22,59,1,3],[23,60,1,4],[24,53,1,1],[25,57,1,2],[26,62,1,4],[27,60,1,3],[28,64,1,5],[29,62,1,4],[30,60,1,3],[31,62,1,4],[32,55,1,1],[33,59,1,2],[34,64,1,4],[35,62,1,3],[36,65,1,5],[37,64,1,4],[38,62,1,3],[39,64,1,4],[40,57,1,1],[41,60,1,2],[42,65,1,4],[43,64,1,3],[44,67,1,5],[45,65,1,4],[46,64,1,3],[47,65,1,4],[48,59,1,1],[49,62,1,2],[50,67,1,4],[51,65,1,3],[52,69,1,5],[53,67,1,4],[54,65,1,3],[55,67,1,4],[56,60,1,1],[57,64,1,2],[58,69,1,4],[59,67,1,3],[60,71,1,5],[61,69,1,4],[62,67,1,3],[63,69,1,4],[64,62,1,1],[65,65,1,2],[66,71,1,4],[67,69,1,3],[68,72,1,5],[69,71,1,4],[70,69,1,3],[71,71,1,4],[72,64,1,1],[73,67,1,2],[74,72,1,4],[75,71,1,3],[76,74,1,5],[77,72,1,4],[78,71,1,3],[79,72,1,4],[80,65,1,1],[81,69,1,2],[82,74,1,4],[83,72,1,3],[84,76,1,5],[85,74,1,4],[86,72,1,3],[87,74,1,4],[88,67,1,1],[89,71,1,2],[90,76,1,4],[91,74,1,3],[92,77,1,5],[93,76,1,4],[94,74,1,3],[95,76,1,4],[96,69,1,1],[97,72,1,2],[98,77,1,4],[99,76,1,3],[100,79,1,5],[101,77,1,4],[102,76,1,3],[103,77,1,4],[104,71,1,1],[105,74,1,2],[106,79,1,4],[107,77,1,3],[108,81,1,5],[109,79,1,4],[110,77,1,3],[111,76,1,2],[112,79,1,5],[113,74,1,3],[114,71,1,2],[115,72,1,3],[116,69,1,1],[117,71,1,2],[118,72,1,3],[119,69,1,1],[120,77,1,5],[121,72,1,3],[122,69,1,2],[123,71,1,3],[124,67,1,1],[125,69,1,2],[126,71,1,3],[127,67,1,1],[128,76,1,5],[129,71,1,3],[130,67,1,2],[131,69,1,3],[132,65,1,1],[133,67,1,2],[134,69,1,3],[135,65,1,1],[136,74,1,5],[137,69,1,3],[138,65,1,2],[139,67,1,3],[140,64,1,1],[141,65,1,2],[142,67,1,3],[143,64,1,1],[144,72,1,5],[145,67,1,3],[146,64,1,2],[147,65,1,3],[148,62,1,1],[149,64,1,2],[150,65,1,3],[151,62,1,1],[152,71,1,5],[153,65,1,3],[154,62,1,2],[155,64,1,3],[156,60,1,1],[157,62,1,2],[158,64,1,3],[159,60,1,1],[160,69,1,5],[161,64,1,3],[162,60,1,2],[163,62,1,3],[164,59,1,1],[165,60,1,2],[166,62,1,3],[167,59,1,1],[168,67,1,5],[169,62,1,3],[170,59,1,2],[171,60,1,3],[172,57,1,1],[173,59,1,2],[174,60,1,3],[175,57,1,1],[176,65,1,5],[177,60,1,3],[178,57,1,2],[179,59,1,3],[180,55,1,1],[181,57,1,2],[182,59,1,3],[183,55,1,1],[184,64,1,5],[185,59,1,3],[186,55,1,2],[187,57,1,3],[188,53,1,1],[189,55,1,2],[190,57,1,3],[191,53,1,1],[192,62,1,5],[193,57,1,3],[194,53,1,2],[195,55,1,3],[196,52,1,1],[197,53,1,2],[198,55,1,3],[199,52,1,1],[200,60,1,5],[201,55,1,3],[202,52,1,2],[203,53,1,3],[204,50,1,1],[205,52,1,2],[206,53,1,3],[207,50,1,1],[208,59,1,5],[209,53,1,3],[210,50,1,2],[211,52,1,3],[212,48,1,1],[213,50,1,2],[214,52,1,3],[215,50,1,2],[216,48,8,0]],"L":[[0,36,1,5],[1,40,1,4],[2,45,1,2],[3,43,1,3],[4,47,1,1],[5,45,1,2],[6,43,1,3],[7,45,1,2],[8,38,1,5],[9,41,1,4],[10,47,1,2],[11,45,1,3],[12,48,1,1],[13,47,1,2],[14,45,1,3],[15,47,1,2],[16,40,1,5],[17,43,1,4],[18,48,1,2],[19,47,1,3],[20,50,1,1],[21,48,1,2],[22,47,1,3],[23,48,1,2],[24,41,1,5],[25,45,1,4],[26,50,1,2],[27,48,1,3],[28,52,1,1],[29,50,1,2],[30,48,1,3],[31,50,1,2],[32,43,1,5],[33,47,1,4],[34,52,1,2],[35,50,1,3],[36,53,1,1],[37,52,1,2],[38,50,1,3],[39,52,1,2],[40,45,1,5],[41,48,1,4],[42,53,1,2],[43,52,1,3],[44,55,1,1],[45,53,1,2],[46,52,1,3],[47,53,1,2],[48,47,1,5],[49,50,1,4],[50,55,1,2],[51,53,1,3],[52,57,1,1],[53,55,1,2],[54,53,1,3],[55,55,1,2],[56,48,1,5],[57,52,1,4],[58,57,1,2],[59,55,1,3],[60,59,1,1],[61,57,1,2],[62,55,1,3],[63,57,1,2],[64,50,1,5],[65,53,1,4],[66,59,1,2],[67,57,1,3],[68,60,1,1],[69,59,1,2],[70,57,1,3],[71,59,1,2],[72,52,1,5],[73,55,1,4],[74,60,1,2],[75,59,1,3],[76,62,1,1],[77,60,1,2],[78,59,1,3],[79,60,1,2],[80,53,1,5],[81,57,1,4],[82,62,1,2],[83,60,1,3],[84,64,1,1],[85,62,1,2],[86,60,1,3],[87,62,1,2],[88,55,1,5],[89,59,1,4],[90,64,1,2],[91,62,1,3],[92,65,1,1],[93,64,1,2],[94,62,1,3],[95,64,1,2],[96,57,1,5],[97,60,1,4],[98,65,1,2],[99,64,1,3],[100,67,1,1],[101,65,1,2],[102,64,1,3],[103,65,1,2],[104,59,1,5],[105,62,1,4],[106,67,1,2],[107,65,1,3],[108,69,1,1],[109,67,1,2],[110,65,1,3],[111,64,1,4],[112,67,1,1],[113,62,1,2],[114,59,1,4],[115,60,1,3],[116,57,1,5],[117,59,1,4],[118,60,1,3],[119,57,1,5],[120,65,1,1],[121,60,1,2],[122,57,1,4],[123,59,1,3],[124,55,1,5],[125,57,1,4],[126,59,1,3],[127,55,1,5],[128,64,1,1],[129,59,1,2],[130,55,1,4],[131,57,1,3],[132,53,1,5],[133,55,1,4],[134,57,1,3],[135,53,1,5],[136,62,1,1],[137,57,1,2],[138,53,1,4],[139,55,1,3],[140,52,1,5],[141,53,1,4],[142,55,1,3],[143,52,1,5],[144,60,1,1],[145,55,1,2],[146,52,1,4],[147,53,1,3],[148,50,1,5],[149,52,1,4],[150,53,1,3],[151,50,1,5],[152,59,1,1],[153,53,1,2],[154,50,1,4],[155,52,1,3],[156,48,1,5],[157,50,1,4],[158,52,1,3],[159,48,1,5],[160,57,1,1],[161,52,1,2],[162,48,1,4],[163,50,1,3],[164,47,1,5],[165,48,1,4],[166,50,1,3],[167,47,1,5],[168,55,1,1],[169,50,1,2],[170,47,1,4],[171,48,1,3],[172,45,1,5],[173,47,1,4],[174,48,1,3],[175,45,1,5],[176,53,1,1],[177,48,1,2],[178,45,1,4],[179,47,1,3],[180,43,1,5],[181,45,1,4],[182,47,1,3],[183,43,1,5],[184,52,1,1],[185,47,1,2],[186,43,1,4],[187,45,1,3],[188,41,1,5],[189,43,1,4],[190,45,1,3],[191,41,1,5],[192,50,1,1],[193,45,1,2],[194,41,1,4],[195,43,1,3],[196,40,1,5],[197,41,1,4],[198,43,1,3],[199,40,1,5],[200,48,1,1],[201,43,1,2],[202,40,1,4],[203,41,1,3],[204,38,1,5],[205,40,1,4],[206,41,1,3],[207,38,1,5],[208,47,1,1],[209,41,1,2],[210,38,1,4],[211,40,1,3],[212,36,1,5],[213,38,1,4],[214,40,1,3],[215,38,1,4],[216,36,8,0]]},{"n":18,"len":232,"split":112,"R":[[0,48,1,1],[1,50,1,2],[2,53,1,4],[3,52,1,3],[4,55,1,5],[5,53,1,4],[6,50,1,2],[7,52,1,3],[8,50,1,1],[9,52,1,2],[10,55,1,4],[11,53,1,3],[12,57,1,5],[13,55,1,4],[14,52,1,2],[15,53,1,3],[16,52,1,1],[17,53,1,2],[18,57,1,4],[19,55,1,3],[20,59,1,5],[21,57,1,4],[22,53,1,2],[23,55,1,3],[24,53,1,1],[25,55,1,2],[26,59,1,4],[27,57,1,3],[28,60,1,5],[29,59,1,4],[30,55,1,2],[31,57,1,3],[32,55,1,1],[33,57,1,2],[34,60,1,4],[35,59,1,3],[36,62,1,5],[37,60,1,4],[38,57,1,2],[39,59,1,3],[40,57,1,1],[41,59,1,2],[42,62,1,4],[43,60,1,3],[44,64,1,5],[45,62,1,4],[46,59,1,2],[47,60,1,3],[48,59,1,1],[49,60,1,2],[50,64,1,4],[51,62,1,3],[52,65,1,5],[53,64,1,4],[54,60,1,2],[55,62,1,3],[56,60,1,1],[57,62,1,2],[58,65,1,4],[59,64,1,3],[60,67,1,5],[61,65,1,4],[62,62,1,2],[63,64,1,3],[64,62,1,1],[65,64,1,2],[66,67,1,4],[67,65,1,3],[68,69,1,5],[69,67,1,4],[70,64,1,2],[71,65,1,3],[72,64,1,1],[73,65,1,2],[74,69,1,4],[75,67,1,3],[76,71,1,5],[77,69,1,4],[78,65,1,2],[79,67,1,3],[80,65,1,1],[81,67,1,2],[82,71,1,4],[83,69,1,3],[84,72,1,5],[85,71,1,4],[86,67,1,2],[87,69,1,3],[88,67,1,1],[89,69,1,2],[90,72,1,4],[91,71,1,3],[92,74,1,5],[93,72,1,4],[94,69,1,2],[95,71,1,3],[96,69,1,1],[97,71,1,2],[98,74,1,4],[99,72,1,3],[100,76,1,5],[101,74,1,4],[102,71,1,2],[103,72,1,3],[104,71,1,1],[105,72,1,2],[106,76,1,4],[107,74,1,3],[108,77,1,5],[109,76,1,4],[110,72,1,1],[111,74,1,2],[112,79,1,5],[113,77,1,4],[114,74,1,2],[115,76,1,3],[116,72,1,1],[117,74,1,2],[118,77,1,4],[119,76,1,3],[120,77,1,5],[121,76,1,4],[122,72,1,2],[123,74,1,3],[124,71,1,1],[125,72,1,2],[126,76,1,4],[127,74,1,3],[128,76,1,5],[129,74,1,4],[130,71,1,2],[131,72,1,3],[132,69,1,1],[133,71,1,2],[134,74,1,4],[135,72,1,3],[136,74,1,5],[137,72,1,4],[138,69,1,2],[139,71,1,3],[140,67,1,1],[141,69,1,2],[142,72,1,4],[143,71,1,3],[144,72,1,5],[145,71,1,4],[146,67,1,2],[147,69,1,3],[148,65,1,1],[149,67,1,2],[150,71,1,4],[151,69,1,3],[152,71,1,5],[153,69,1,4],[154,65,1,2],[155,67,1,3],[156,64,1,1],[157,65,1,2],[158,69,1,4],[159,67,1,3],[160,69,1,5],[161,67,1,4],[162,64,1,2],[163,65,1,3],[164,62,1,1],[165,64,1,2],[166,67,1,4],[167,65,1,3],[168,67,1,5],[169,65,1,4],[170,62,1,2],[171,64,1,3],[172,60,1,1],[173,62,1,2],[174,65,1,4],[175,64,1,3],[176,65,1,5],[177,64,1,4],[178,60,1,2],[179,62,1,3],[180,59,1,1],[181,60,1,2],[182,64,1,4],[183,62,1,3],[184,64,1,5],[185,62,1,4],[186,59,1,2],[187,60,1,3],[188,57,1,1],[189,59,1,2],[190,62,1,4],[191,60,1,3],[192,62,1,5],[193,60,1,4],[194,57,1,2],[195,59,1,3],[196,55,1,1],[197,57,1,2],[198,60,1,4],[199,59,1,3],[200,60,1,5],[201,59,1,4],[202,55,1,2],[203,57,1,3],[204,53,1,1],[205,55,1,2],[206,59,1,4],[207,57,1,3],[208,59,1,5],[209,57,1,4],[210,53,1,2],[211,55,1,3],[212,52,1,1],[213,53,1,2],[214,57,1,4],[215,55,1,3],[216,57,1,5],[217,55,1,4],[218,52,1,2],[219,53,1,3],[220,50,1,1],[221,52,1,3],[222,55,1,5],[223,53,1,4],[224,48,8,1]],"L":[[0,36,1,5],[1,38,1,4],[2,41,1,2],[3,40,1,3],[4,43,1,1],[5,41,1,2],[6,38,1,4],[7,40,1,3],[8,38,1,5],[9,40,1,4],[10,43,1,2],[11,41,1,3],[12,45,1,1],[13,43,1,2],[14,40,1,4],[15,41,1,3],[16,40,1,5],[17,41,1,4],[18,45,1,2],[19,43,1,3],[20,47,1,1],[21,45,1,2],[22,41,1,4],[23,43,1,3],[24,41,1,5],[25,43,1,4],[26,47,1,2],[27,45,1,3],[28,48,1,1],[29,47,1,2],[30,43,1,4],[31,45,1,3],[32,43,1,5],[33,45,1,4],[34,48,1,2],[35,47,1,3],[36,50,1,1],[37,48,1,2],[38,45,1,4],[39,47,1,3],[40,45,1,5],[41,47,1,4],[42,50,1,2],[43,48,1,3],[44,52,1,1],[45,50,1,2],[46,47,1,4],[47,48,1,3],[48,47,1,4],[49,48,1,3],[50,52,1,1],[51,50,1,2],[52,53,1,1],[53,52,1,2],[54,48,1,4],[55,50,1,3],[56,48,1,5],[57,50,1,4],[58,53,1,2],[59,52,1,3],[60,55,1,1],[61,53,1,2],[62,50,1,4],[63,52,1,3],[64,50,1,5],[65,52,1,4],[66,55,1,2],[67,53,1,3],[68,57,1,1],[69,55,1,2],[70,52,1,4],[71,53,1,3],[72,52,1,5],[73,53,1,4],[74,57,1,2],[75,55,1,3],[76,59,1,1],[77,57,1,2],[78,53,1,4],[79,55,1,3],[80,53,1,5],[81,55,1,4],[82,59,1,2],[83,57,1,3],[84,60,1,1],[85,59,1,2],[86,55,1,4],[87,57,1,3],[88,55,1,5],[89,57,1,4],[90,60,1,2],[91,59,1,3],[92,62,1,1],[93,60,1,2],[94,57,1,4],[95,59,1,3],[96,57,1,5],[97,59,1,4],[98,62,1,2],[99,60,1,3],[100,64,1,1],[101,62,1,2],[102,59,1,4],[103,60,1,3],[104,59,1,5],[105,60,1,4],[106,64,1,2],[107,62,1,3],[108,65,1,1],[109,64,1,2],[110,60,1,5],[111,62,1,4],[112,67,1,1],[113,65,1,2],[114,62,1,4],[115,64,1,3],[116,60,1,5],[117,62,1,4],[118,65,1,2],[119,64,1,3],[120,65,1,1],[121,64,1,2],[122,60,1,4],[123,62,1,3],[124,59,1,5],[125,60,1,4],[126,64,1,2],[127,62,1,3],[128,64,1,1],[129,62,1,2],[130,59,1,4],[131,60,1,3],[132,57,1,5],[133,59,1,4],[134,62,1,2],[135,60,1,3],[136,62,1,1],[137,60,1,2],[138,57,1,4],[139,59,1,3],[140,55,1,5],[141,57,1,4],[142,60,1,2],[143,59,1,3],[144,60,1,1],[145,59,1,2],[146,55,1,4],[147,57,1,3],[148,53,1,5],[149,55,1,4],[150,59,1,2],[151,57,1,3],[152,59,1,1],[153,57,1,2],[154,53,1,4],[155,55,1,3],[156,52,1,5],[157,53,1,4],[158,57,1,2],[159,55,1,3],[160,57,1,1],[161,55,1,2],[162,52,1,4],[163,53,1,3],[164,50,1,5],[165,52,1,4],[166,55,1,2],[167,53,1,3],[168,55,1,1],[169,53,1,2],[170,50,1,4],[171,52,1,3],[172,48,1,5],[173,50,1,4],[174,53,1,2],[175,52,1,3],[176,53,1,1],[177,52,1,2],[178,48,1,4],[179,50,1,3],[180,47,1,5],[181,48,1,4],[182,52,1,2],[183,50,1,3],[184,52,1,1],[185,50,1,2],[186,47,1,4],[187,48,1,3],[188,45,1,5],[189,47,1,4],[190,50,1,2],[191,48,1,3],[192,50,1,1],[193,48,1,2],[194,45,1,4],[195,47,1,3],[196,43,1,5],[197,45,1,4],[198,48,1,2],[199,47,1,3],[200,48,1,1],[201,47,1,2],[202,43,1,4],[203,45,1,3],[204,41,1,5],[205,43,1,4],[206,47,1,2],[207,45,1,3],[208,47,1,1],[209,45,1,2],[210,41,1,4],[211,43,1,3],[212,40,1,5],[213,41,1,4],[214,45,1,2],[215,43,1,3],[216,45,1,1],[217,43,1,2],[218,40,1,4],[219,41,1,3],[220,38,1,5],[221,40,1,4],[222,43,1,1],[223,41,1,2],[224,36,8,5]]},{"n":19,"len":232,"split":112,"R":[[0,48,1,1],[1,57,1,5],[2,53,1,3],[3,55,1,4],[4,57,1,5],[5,53,1,3],[6,52,1,2],[7,55,1,4],[8,50,1,1],[9,59,1,5],[10,55,1,3],[11,57,1,4],[12,59,1,5],[13,55,1,3],[14,53,1,2],[15,57,1,4],[16,52,1,1],[17,60,1,5],[18,57,1,3],[19,59,1,4],[20,60,1,5],[21,57,1,3],[22,55,1,2],[23,59,1,4],[24,53,1,1],[25,62,1,5],[26,59,1,3],[27,60,1,4],[28,62,1,5],[29,59,1,3],[30,57,1,2],[31,60,1,4],[32,55,1,1],[33,64,1,5],[34,60,1,3],[35,62,1,4],[36,64,1,5],[37,60,1,3],[38,59,1,2],[39,62,1,4],[40,57,1,1],[41,65,1,5],[42,62,1,3],[43,64,1,4],[44,65,1,5],[45,62,1,3],[46,60,1,2],[47,64,1,4],[48,59,1,1],[49,67,1,5],[50,64,1,3],[51,65,1,4],[52,67,1,5],[53,64,1,3],[54,62,1,2],[55,65,1,4],[56,60,1,1],[57,69,1,5],[58,65,1,3],[59,67,1,4],[60,69,1,5],[61,65,1,3],[62,64,1,2],[63,67,1,4],[64,62,1,1],[65,71,1,5],[66,67,1,3],[67,69,1,4],[68,71,1,5],[69,67,1,3],[70,65,1,2],[71,69,1,4],[72,64,1,1],[73,72,1,5],[74,69,1,3],[75,71,1,4],[76,72,1,5],[77,69,1,3],[78,67,1,2],[79,71,1,4],[80,65,1,1],[81,74,1,5],[82,71,1,3],[83,72,1,4],[84,74,1,5],[85,71,1,3],[86,69,1,2],[87,72,1,4],[88,67,1,1],[89,76,1,5],[90,72,1,3],[91,74,1,4],[92,76,1,5],[93,72,1,3],[94,71,1,2],[95,74,1,4],[96,69,1,1],[97,77,1,5],[98,74,1,3],[99,76,1,4],[100,77,1,5],[101,74,1,3],[102,72,1,2],[103,76,1,4],[104,71,1,1],[105,79,1,5],[106,76,1,3],[107,77,1,4],[108,79,1,5],[109,76,1,3],[110,74,1,2],[111,77,1,4],[112,79,1,5],[113,71,1,1],[114,74,1,3],[115,72,1,2],[116,71,1,1],[117,74,1,3],[118,76,1,4],[119,72,1,2],[120,77,1,5],[121,69,1,1],[122,72,1,3],[123,71,1,2],[124,69,1,1],[125,72,1,3],[126,74,1,4],[127,71,1,2],[128,76,1,5],[129,67,1,1],[130,71,1,3],[131,69,1,2],[132,67,1,1],[133,71,1,3],[134,72,1,4],[135,69,1,2],[136,74,1,5],[137,65,1,1],[138,69,1,3],[139,67,1,2],[140,65,1,1],[141,69,1,3],[142,71,1,4],[143,67,1,2],[144,72,1,5],[145,64,1,1],[146,67,1,2],[147,65,1,1],[148,64,1,1],[149,67,1,2],[150,69,1,4],[151,65,1,2],[152,71,1,5],[153,62,1,1],[154,65,1,2],[155,64,1,1],[156,62,1,1],[157,65,1,2],[158,67,1,4],[159,64,1,2],[160,69,1,5],[161,60,1,1],[162,64,1,2],[163,62,1,1],[164,60,1,1],[165,64,1,2],[166,65,1,4],[167,62,1,2],[168,67,1,5],[169,59,1,1],[170,62,1,2],[171,60,1,1],[172,59,1,1],[173,62,1,2],[174,64,1,4],[175,60,1,2],[176,65,1,5],[177,57,1,1],[178,60,1,2],[179,59,1,1],[180,57,1,1],[181,60,1,2],[182,62,1,4],[183,59,1,2],[184,64,1,5],[185,55,1,1],[186,59,1,2],[187,57,1,1],[188,55,1,1],[189,59,1,2],[190,60,1,4],[191,57,1,2],[192,62,1,5],[193,53,1,1],[194,57,1,2],[195,55,1,1],[196,53,1,1],[197,57,1,2],[198,59,1,4],[199,55,1,2],[200,60,1,5],[201,52,1,1],[202,55,1,2],[203,53,1,1],[204,52,1,1],[205,55,1,2],[206,57,1,4],[207,53,1,2],[208,59,1,5],[209,50,1,1],[210,53,1,2],[211,52,1,1],[212,50,1,1],[213,53,1,2],[214,55,1,4],[215,52,1,2],[216,57,1,5],[217,48,1,1],[218,52,1,2],[219,50,1,1],[220,48,1,1],[221,52,1,2],[222,53,1,4],[223,50,1,2],[224,48,8,0]],"L":[[0,36,1,5],[1,45,1,1],[2,41,1,3],[3,43,1,2],[4,45,1,1],[5,41,1,3],[6,40,1,4],[7,43,1,2],[8,38,1,5],[9,47,1,1],[10,43,1,3],[11,45,1,2],[12,47,1,1],[13,43,1,3],[14,41,1,4],[15,45,1,2],[16,40,1,5],[17,48,1,1],[18,45,1,3],[19,47,1,2],[20,48,1,1],[21,45,1,3],[22,43,1,4],[23,47,1,2],[24,41,1,5],[25,50,1,1],[26,47,1,3],[27,48,1,2],[28,50,1,1],[29,47,1,3],[30,45,1,4],[31,48,1,2],[32,43,1,5],[33,52,1,1],[34,48,1,3],[35,50,1,2],[36,52,1,1],[37,48,1,3],[38,47,1,4],[39,50,1,2],[40,45,1,5],[41,53,1,1],[42,50,1,3],[43,52,1,2],[44,53,1,1],[45,50,1,3],[46,48,1,4],[47,52,1,2],[48,47,1,5],[49,55,1,1],[50,52,1,3],[51,53,1,2],[52,55,1,1],[53,52,1,3],[54,50,1,4],[55,53,1,2],[56,48,1,5],[57,57,1,1],[58,53,1,3],[59,55,1,2],[60,57,1,1],[61,53,1,3],[62,52,1,4],[63,55,1,2],[64,50,1,5],[65,59,1,1],[66,55,1,3],[67,57,1,2],[68,59,1,1],[69,55,1,3],[70,53,1,4],[71,57,1,2],[72,52,1,5],[73,60,1,1],[74,57,1,3],[75,59,1,2],[76,60,1,1],[77,57,1,3],[78,55,1,4],[79,59,1,2],[80,53,1,5],[81,62,1,1],[82,59,1,3],[83,60,1,2],[84,62,1,1],[85,59,1,3],[86,57,1,4],[87,60,1,2],[88,55,1,5],[89,64,1,1],[90,60,1,3],[91,62,1,2],[92,64,1,1],[93,60,1,3],[94,59,1,4],[95,62,1,2],[96,57,1,5],[97,65,1,1],[98,62,1,3],[99,64,1,2],[100,65,1,1],[101,62,1,3],[102,60,1,4],[103,64,1,2],[104,59,1,5],[105,67,1,1],[106,64,1,3],[107,65,1,2],[108,67,1,1],[109,64,1,3],[110,62,1,4],[111,65,1,2],[112,67,1,1],[113,59,1,5],[114,62,1,3],[115,60,1,4],[116,59,1,5],[117,62,1,3],[118,64,1,2],[119,60,1,4],[120,65,1,1],[121,57,1,5],[122,60,1,3],[123,59,1,4],[124,57,1,5],[125,60,1,3],[126,62,1,2],[127,59,1,4],[128,64,1,1],[129,55,1,5],[130,59,1,3],[131,57,1,4],[132,55,1,5],[133,59,1,3],[134,60,1,2],[135,57,1,4],[136,62,1,1],[137,53,1,5],[138,57,1,3],[139,55,1,4],[140,53,1,5],[141,57,1,3],[142,59,1,2],[143,55,1,4],[144,60,1,1],[145,52,1,5],[146,55,1,4],[147,53,1,5],[148,52,1,5],[149,55,1,4],[150,57,1,2],[151,53,1,4],[152,59,1,1],[153,50,1,5],[154,53,1,4],[155,52,1,5],[156,50,1,5],[157,53,1,4],[158,55,1,2],[159,52,1,4],[160,57,1,1],[161,48,1,5],[162,52,1,4],[163,50,1,5],[164,48,1,5],[165,52,1,4],[166,53,1,2],[167,50,1,4],[168,55,1,1],[169,47,1,5],[170,50,1,4],[171,48,1,5],[172,47,1,5],[173,50,1,4],[174,52,1,2],[175,48,1,4],[176,53,1,1],[177,45,1,5],[178,48,1,4],[179,47,1,5],[180,45,1,5],[181,48,1,4],[182,50,1,2],[183,47,1,4],[184,52,1,1],[185,43,1,5],[186,47,1,4],[187,45,1,5],[188,43,1,5],[189,47,1,4],[190,48,1,2],[191,45,1,4],[192,50,1,1],[193,41,1,5],[194,45,1,4],[195,43,1,5],[196,41,1,5],[197,45,1,4],[198,47,1,2],[199,43,1,4],[200,48,1,1],[201,40,1,5],[202,43,1,4],[203,41,1,5],[204,40,1,5],[205,43,1,4],[206,45,1,2],[207,41,1,4],[208,47,1,1],[209,38,1,5],[210,41,1,4],[211,40,1,5],[212,38,1,5],[213,41,1,4],[214,43,1,2],[215,40,1,4],[216,45,1,1],[217,36,1,5],[218,40,1,4],[219,38,1,5],[220,36,1,5],[221,40,1,4],[222,41,1,2],[223,38,1,4],[224,36,8,0]]},{"n":20,"len":248,"split":120,"R":[[0,52,1,1],[1,55,1,2],[2,60,1,4],[3,64,1,5],[4,60,1,4],[5,59,1,3],[6,60,1,4],[7,57,1,2],[8,53,1,1],[9,57,1,2],[10,62,1,4],[11,65,1,5],[12,62,1,4],[13,60,1,3],[14,62,1,4],[15,59,1,2],[16,55,1,1],[17,59,1,2],[18,64,1,4],[19,67,1,5],[20,64,1,4],[21,62,1,3],[22,64,1,4],[23,60,1,2],[24,57,1,1],[25,60,1,2],[26,65,1,4],[27,69,1,5],[28,65,1,4],[29,64,1,3],[30,65,1,4],[31,62,1,2],[32,59,1,1],[33,62,1,2],[34,67,1,4],[35,71,1,5],[36,67,1,4],[37,65,1,3],[38,67,1,4],[39,64,1,2],[40,60,1,1],[41,64,1,2],[42,69,1,4],[43,72,1,5],[44,69,1,4],[45,67,1,3],[46,69,1,4],[47,65,1,2],[48,62,1,1],[49,65,1,2],[50,71,1,4],[51,74,1,5],[52,71,1,4],[53,69,1,3],[54,71,1,4],[55,67,1,2],[56,64,1,1],[57,67,1,2],[58,72,1,4],[59,76,1,5],[60,72,1,4],[61,71,1,3],[62,72,1,4],[63,69,1,2],[64,65,1,1],[65,69,1,2],[66,74,1,4],[67,77,1,5],[68,74,1,4],[69,72,1,3],[70,74,1,4],[71,71,1,2],[72,67,1,1],[73,71,1,2],[74,76,1,4],[75,79,1,5],[76,76,1,4],[77,74,1,3],[78,76,1,4],[79,72,1,2],[80,69,1,1],[81,72,1,2],[82,77,1,4],[83,81,1,5],[84,77,1,4],[85,76,1,3],[86,77,1,4],[87,74,1,2],[88,71,1,1],[89,74,1,2],[90,79,1,4],[91,83,1,5],[92,79,1,4],[93,77,1,3],[94,79,1,4],[95,76,1,2],[96,72,1,1],[97,76,1,2],[98,81,1,4],[99,84,1,5],[100,81,1,4],[101,79,1,3],[102,81,1,4],[103,77,1,2],[104,74,1,1],[105,77,1,2],[106,83,1,4],[107,86,1,5],[108,83,1,4],[109,81,1,3],[110,83,1,4],[111,79,1,2],[112,76,1,1],[113,79,1,2],[114,84,1,4],[115,88,1,5],[116,84,1,4],[117,83,1,3],[118,84,1,4],[119,79,1,2],[120,88,1,5],[121,84,1,4],[122,79,1,2],[123,76,1,1],[124,79,1,3],[125,77,1,2],[126,79,1,3],[127,76,1,1],[128,86,1,5],[129,83,1,4],[130,77,1,2],[131,74,1,1],[132,77,1,3],[133,76,1,2],[134,77,1,3],[135,74,1,1],[136,84,1,5],[137,81,1,4],[138,76,1,2],[139,72,1,1],[140,76,1,3],[141,74,1,2],[142,76,1,3],[143,72,1,1],[144,83,1,5],[145,79,1,4],[146,74,1,2],[147,71,1,1],[148,74,1,3],[149,72,1,2],[150,74,1,3],[151,71,1,1],[152,81,1,5],[153,77,1,4],[154,72,1,2],[155,69,1,1],[156,72,1,3],[157,71,1,2],[158,72,1,3],[159,69,1,1],[160,79,1,5],[161,76,1,4],[162,71,1,2],[163,67,1,1],[164,71,1,3],[165,69,1,2],[166,71,1,3],[167,67,1,1],[168,77,1,5],[169,74,1,4],[170,69,1,2],[171,65,1,1],[172,69,1,3],[173,67,1,2],[174,69,1,3],[175,65,1,1],[176,76,1,5],[177,72,1,4],[178,67,1,2],[179,64,1,1],[180,67,1,3],[181,65,1,2],[182,67,1,3],[183,64,1,1],[184,74,1,5],[185,71,1,4],[186,65,1,2],[187,62,1,1],[188,65,1,3],[189,64,1,2],[190,65,1,3],[191,62,1,1],[192,72,1,5],[193,69,1,4],[194,64,1,2],[195,60,1,1],[196,64,1,3],[197,62,1,2],[198,64,1,3],[199,60,1,1],[200,71,1,5],[201,67,1,4],[202,62,1,2],[203,59,1,1],[204,62,1,3],[205,60,1,2],[206,62,1,3],[207,59,1,1],[208,69,1,5],[209,65,1,4],[210,60,1,2],[211,57,1,1],[212,60,1,3],[213,59,1,2],[214,60,1,3],[215,57,1,1],[216,67,1,5],[217,64,1,4],[218,59,1,2],[219,55,1,1],[220,59,1,3],[221,57,1,2],[222,59,1,3],[223,55,1,1],[224,65,1,5],[225,62,1,4],[226,57,1,2],[227,53,1,1],[228,57,1,3],[229,55,1,2],[230,57,1,3],[231,53,1,1],[232,64,1,5],[233,60,1,4],[234,55,1,2],[235,52,1,1],[236,55,1,3],[237,53,1,2],[238,55,1,3],[239,53,1,2],[240,52,8,0],[240,60,8,0]],"L":[[0,40,1,5],[1,43,1,4],[2,48,1,2],[3,52,1,1],[4,48,1,2],[5,47,1,3],[6,48,1,2],[7,45,1,4],[8,41,1,5],[9,45,1,4],[10,50,1,2],[11,53,1,1],[12,50,1,2],[13,48,1,3],[14,50,1,2],[15,47,1,4],[16,43,1,5],[17,47,1,4],[18,52,1,2],[19,55,1,1],[20,52,1,2],[21,50,1,3],[22,52,1,2],[23,48,1,4],[24,45,1,5],[25,48,1,4],[26,53,1,2],[27,57,1,1],[28,53,1,2],[29,52,1,3],[30,53,1,2],[31,50,1,4],[32,47,1,5],[33,50,1,4],[34,55,1,2],[35,59,1,1],[36,55,1,3],[37,53,1,4],[38,55,1,3],[39,52,1,4],[40,48,1,5],[41,52,1,4],[42,57,1,2],[43,60,1,1],[44,57,1,3],[45,55,1,4],[46,57,1,3],[47,53,1,4],[48,50,1,5],[49,53,1,4],[50,59,1,2],[51,62,1,1],[52,59,1,3],[53,57,1,4],[54,59,1,3],[55,55,1,4],[56,52,1,5],[57,55,1,4],[58,60,1,2],[59,64,1,1],[60,60,1,3],[61,59,1,4],[62,60,1,3],[63,57,1,4],[64,53,1,5],[65,57,1,4],[66,62,1,2],[67,65,1,1],[68,62,1,3],[69,60,1,4],[70,62,1,3],[71,59,1,4],[72,55,1,5],[73,59,1,4],[74,64,1,2],[75,67,1,1],[76,64,1,3],[77,62,1,4],[78,64,1,3],[79,60,1,4],[80,57,1,5],[81,60,1,4],[82,65,1,2],[83,69,1,1],[84,65,1,2],[85,64,1,3],[86,65,1,2],[87,62,1,4],[88,59,1,5],[89,62,1,4],[90,67,1,2],[91,71,1,1],[92,67,1,2],[93,65,1,3],[94,67,1,2],[95,64,1,4],[96,60,1,5],[97,64,1,4],[98,69,1,2],[99,72,1,1],[100,69,1,2],[101,67,1,3],[102,69,1,2],[103,65,1,4],[104,62,1,5],[105,65,1,4],[106,71,1,2],[107,74,1,1],[108,71,1,2],[109,69,1,3],[110,71,1,2],[111,67,1,4],[112,64,1,5],[113,67,1,4],[114,72,1,2],[115,76,1,1],[116,72,1,2],[117,71,1,3],[118,72,1,2],[119,67,1,4],[120,76,1,1],[121,72,1,2],[122,67,1,4],[123,64,1,5],[124,67,1,3],[125,65,1,4],[126,67,1,3],[127,64,1,5],[128,74,1,1],[129,71,1,2],[130,65,1,4],[131,62,1,5],[132,65,1,3],[133,64,1,4],[134,65,1,3],[135,62,1,5],[136,72,1,1],[137,69,1,2],[138,64,1,4],[139,60,1,5],[140,64,1,3],[141,62,1,4],[142,64,1,3],[143,60,1,5],[144,71,1,1],[145,67,1,2],[146,62,1,4],[147,59,1,5],[148,62,1,3],[149,60,1,4],[150,62,1,3],[151,59,1,5],[152,69,1,1],[153,65,1,2],[154,60,1,4],[155,57,1,5],[156,60,1,3],[157,59,1,4],[158,60,1,3],[159,57,1,5],[160,67,1,1],[161,64,1,2],[162,59,1,4],[163,55,1,5],[164,59,1,3],[165,57,1,4],[166,59,1,3],[167,55,1,5],[168,65,1,1],[169,62,1,2],[170,57,1,4],[171,53,1,5],[172,57,1,3],[173,55,1,4],[174,57,1,3],[175,53,1,5],[176,64,1,1],[177,60,1,2],[178,55,1,4],[179,52,1,5],[180,55,1,3],[181,53,1,4],[182,55,1,3],[183,52,1,5],[184,62,1,1],[185,59,1,2],[186,53,1,4],[187,50,1,5],[188,53,1,3],[189,52,1,4],[190,53,1,3],[191,50,1,5],[192,60,1,1],[193,57,1,2],[194,52,1,4],[195,48,1,5],[196,52,1,3],[197,50,1,4],[198,52,1,3],[199,48,1,5],[200,59,1,1],[201,55,1,2],[202,50,1,4],[203,47,1,5],[204,50,1,3],[205,48,1,4],[206,50,1,3],[207,47,1,5],[208,57,1,1],[209,53,1,2],[210,48,1,4],[211,45,1,5],[212,48,1,3],[213,47,1,4],[214,48,1,3],[215,45,1,5],[216,55,1,1],[217,52,1,2],[218,47,1,4],[219,43,1,5],[220,47,1,3],[221,45,1,4],[222,47,1,3],[223,43,1,5],[224,53,1,1],[225,50,1,2],[226,45,1,4],[227,41,1,5],[228,45,1,3],[229,43,1,4],[230,45,1,3],[231,41,1,5],[232,52,1,1],[233,48,1,2],[234,43,1,4],[235,40,1,5],[236,43,1,3],[237,41,1,4],[238,43,1,3],[239,41,1,4],[240,36,8,0],[240,48,8,0]]}];
 (function(){
   const $ = id => document.getElementById(id);
-  const S = { bpm:60, bars:8, sub:4, tol:25, lat:0, subClick:false };
-  try{ const saved = JSON.parse(localStorage.getItem('hanon-timing')||'{}'); Object.assign(S, saved); }catch(e){}
-  function save(){ try{ localStorage.setItem('hanon-timing', JSON.stringify(S)); }catch(e){} }
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function loadJSON(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?def:v; }catch(e){ return def; } }
+  function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } }
+  const S = Object.assign({ex:'1',range:'all',hands:'both',bpm:60,tol:25,lat:0,sound:'wood',subClick:false}, loadJSON('hanon2-settings',{}));
+  const old = loadJSON('hanon-timing',null); if(old && !loadJSON('hanon2-settings',null) && typeof old.lat==='number') S.lat=old.lat;
+  const save=()=>saveJSON('hanon2-settings',S);
+  let imports = loadJSON('hanon2-imports',[]);
+  let history = loadJSON('hanon2-history',{});
+
+  // ---------- library ----------
+  function library(){
+    const b = HANON.map(e=>({key:String(e.n),name:`第 ${e.n} 條`,R:e.R,L:e.L,len:e.len,split:e.split,m16:8,builtin:true}));
+    return b.concat(imports);
+  }
+  function getEx(key){ return library().find(e=>e.key===key) || library()[0]; }
+  function fillSelect(){
+    const sel=$('exSel'); sel.innerHTML='';
+    const g1=document.createElement('optgroup'); g1.label='第一部分（內建，含指法）';
+    HANON.forEach(e=>{ const o=new Option(`第 ${e.n} 條`+scoreTag(String(e.n)),String(e.n)); g1.appendChild(o); });
+    sel.appendChild(g1);
+    const g2=document.createElement('optgroup'); g2.label='我匯入的';
+    if(imports.length) imports.forEach(e=>g2.appendChild(new Option(e.name+scoreTag(e.key),e.key)));
+    else { const o=new Option('（還沒有，可在最下方匯入第 21–60 條）',''); o.disabled=true; g2.appendChild(o); }
+    sel.appendChild(g2);
+    sel.value = getEx(S.ex).key;
+  }
+  function scoreTag(key){ const h=history[key]; if(!h||!h.length) return ''; const best=Math.max(...h.map(x=>x.total)); return `　最佳 ${best}`; }
 
   // ---------- settings UI ----------
-  const bpmI=$('bpm'), barsI=$('bars'), latI=$('lat'), tolS=$('tol'), subC=$('subClick');
+  const bpmI=$('bpm'), latI=$('lat');
   function syncUI(){
-    bpmI.value=S.bpm; barsI.value=S.bars; latI.value=S.lat; tolS.value=String(S.tol); subC.checked=S.subClick;
-    document.querySelectorAll('#subSeg button').forEach(b=>b.setAttribute('aria-pressed', String(+b.dataset.sub===S.sub)));
-    const pct = Math.min(50, S.tol / (60000/S.bpm/S.sub/2) * 50);
-    $('zone').style.left=(50-pct)+'%'; $('zone').style.width=(pct*2)+'%';
+    const ex=getEx(S.ex); S.ex=ex.key;
+    bpmI.value=S.bpm; latI.value=S.lat; $('tol').value=String(S.tol); $('sound').value=S.sound; $('subClick').checked=S.subClick;
+    if(ex.split==null && S.range!=='all') S.range='all';
+    document.querySelectorAll('#rangeSeg button').forEach(b=>{ b.setAttribute('aria-pressed',String(b.dataset.v===S.range)); b.disabled = b.dataset.v!=='all' && ex.split==null; });
+    document.querySelectorAll('#handSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===S.hands)));
+    $('delImp').hidden = !!ex.builtin;
   }
-  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{S.bpm=clamp(S.bpm+ +b.dataset.step,30,200);save();syncUI();});
-  document.querySelectorAll('[data-bars]').forEach(b=>b.onclick=()=>{S.bars=clamp(S.bars+ +b.dataset.bars,1,64);save();syncUI();});
+  $('exSel').onchange=()=>{ if(!$('exSel').value) return; S.ex=$('exSel').value; save(); syncUI(); prepare(); renderHistory(); };
+  document.querySelectorAll('#rangeSeg button').forEach(b=>b.onclick=()=>{S.range=b.dataset.v;save();syncUI();prepare();});
+  document.querySelectorAll('#handSeg button').forEach(b=>b.onclick=()=>{S.hands=b.dataset.v;save();syncUI();prepare();});
+  document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{S.bpm=clamp(S.bpm+ +b.dataset.step,30,160);save();syncUI();prepare();});
   document.querySelectorAll('[data-lat]').forEach(b=>b.onclick=()=>{S.lat=clamp(S.lat+ +b.dataset.lat,-300,500);save();syncUI();});
-  bpmI.onchange=()=>{S.bpm=clamp(+bpmI.value||60,30,200);save();syncUI();};
-  barsI.onchange=()=>{S.bars=clamp(+barsI.value||8,1,64);save();syncUI();};
+  bpmI.onchange=()=>{S.bpm=clamp(Math.round(+bpmI.value||60),30,160);save();syncUI();prepare();};
   latI.onchange=()=>{S.lat=clamp(Math.round(+latI.value||0),-300,500);save();syncUI();};
-  tolS.onchange=()=>{S.tol=+tolS.value;save();syncUI();render();};
-  subC.onchange=()=>{S.subClick=subC.checked;save();};
-  document.querySelectorAll('#subSeg button').forEach(b=>b.onclick=()=>{S.sub=+b.dataset.sub;save();syncUI();});
-  syncUI();
+  $('tol').onchange=()=>{S.tol=+$('tol').value;save(); if(lastSession) renderReport(analyze(lastSession),false); else if(sampleSess) renderReport(analyze(sampleSess),true); };
+  $('subClick').onchange=()=>{S.subClick=$('subClick').checked;save();};
+  $('sound').onchange=async()=>{ S.sound=$('sound').value; save(); if(S.sound==='off'||run) return;
+    await ensureAudio(); const t=ctx.currentTime+0.05; click(t,'accent'); click(t+0.25,'sub'); click(t+0.5,'beat'); };
 
   // ---------- MIDI ----------
   const chip=$('midiChip');
-  let midiOK=false;
-  function setChip(text,cls){chip.textContent=text;chip.className='chip '+(cls||'');}
+  function setChip(t,c){ chip.textContent=t; chip.className='chip '+(c||''); }
   function bindInputs(access){
-    let names=[];
-    access.inputs.forEach(inp=>{ inp.onmidimessage=onMidi; names.push(inp.name||'MIDI 裝置'); });
-    midiOK = names.length>0;
-    if(midiOK) setChip('已連接：'+names[0],'ok'); else setChip('沒有偵測到琴，請檢查線材','warn');
-    $('tap').hidden = midiOK;
+    const names=[]; access.inputs.forEach(inp=>{ inp.onmidimessage=onMidi; names.push(inp.name||'MIDI 裝置'); });
+    if(names.length) setChip('已連接：'+names[0],'ok'); else setChip('沒有偵測到琴，請檢查線材','warn');
   }
-  function initMIDI(){
-    if(!navigator.requestMIDIAccess){ setChip('此瀏覽器不支援 MIDI','warn'); $('tap').hidden=false; return; }
-    navigator.requestMIDIAccess({sysex:false}).then(access=>{
-      bindInputs(access);
-      access.onstatechange=()=>bindInputs(access);
-    }).catch(()=>{ setChip('無法讀取 MIDI（權限被拒）','warn'); $('tap').hidden=false; });
-  }
+  if(navigator.requestMIDIAccess){
+    navigator.requestMIDIAccess({sysex:false}).then(a=>{ bindInputs(a); a.onstatechange=()=>bindInputs(a); })
+      .catch(()=>setChip('無法讀取 MIDI（權限被拒）','warn'));
+  } else setChip('此瀏覽器不支援 MIDI，請用 Chrome','warn');
   function onMidi(e){
-    const [st,note,vel]=e.data;
-    if((st&0xF0)===0x90 && vel>0) input(e.timeStamp||performance.now(), note);
+    const d=e.data, st=d[0]&0xF0, ts=e.timeStamp||performance.now();
+    if(st===0x90 && d[2]>0) noteOn(ts,d[1],d[2]);
+    else if(st===0x80 || (st===0x90 && d[2]===0)) noteOff(ts,d[1]);
+    else if(st===0xB0 && d[1]===64) pedal(ts,d[2]>=64);
   }
-  initMIDI();
-  const tap=$('tap');
-  tap.addEventListener('pointerdown',e=>{e.preventDefault();input(e.timeStamp||performance.now(),null);});
-  document.addEventListener('keydown',e=>{ if(e.code==='Space' && run && !e.repeat){ e.preventDefault(); input(e.timeStamp||performance.now(),null);} });
 
-  // ---------- audio + session ----------
-  let ctx=null, run=null, timer=null, raf=null, wake=null;
-  function click(t, kind){
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.frequency.value = kind==='accent'?1760: kind==='beat'?1175: 784;
-    const peak = kind==='sub'?0.18:0.5;
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+0.002); g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
-    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+0.06);
+  // ---------- audio ----------
+  let ctx=null, noiseBuf=null;
+  async function ensureAudio(){ if(!ctx){ const AC=window.AudioContext||window.webkitAudioContext; ctx=new AC({latencyHint:'interactive'}); } try{ await ctx.resume(); }catch(e){} }
+  function noise(){ if(noiseBuf) return noiseBuf; noiseBuf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.05),ctx.sampleRate); const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; return noiseBuf; }
+  function env(g,t,p,dc){ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(p,t+0.0015); g.gain.exponentialRampToValueAtTime(0.0001,t+dc); }
+  function tone(t,type,f0,f1,p,dc){ const o=ctx.createOscillator(),g=ctx.createGain(); o.type=type; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f1,t+dc); env(g,t,p,dc); o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+dc+0.02); }
+  function burst(t,f,q,p,dc){ const s=ctx.createBufferSource(),bp=ctx.createBiquadFilter(),g=ctx.createGain(); s.buffer=noise(); bp.type='bandpass'; bp.frequency.value=f; bp.Q.value=q; env(g,t,p,dc); s.connect(bp).connect(g).connect(ctx.destination); s.start(t); s.stop(t+dc+0.02); }
+  function click(t,kind){
+    const snd = S.sound==='off' ? 'wood' : S.sound;
+    const f=kind==='accent'?1250:950, v=kind==='accent'?1:kind==='beat'?0.8:0.32;
+    if(snd==='stick'){ burst(t,f*2.6,6,0.9*v,0.03); tone(t,'triangle',f*1.6,f*1.4,0.35*v,0.025); }
+    else if(snd==='soft'){ tone(t,'sine',f*0.55,f*0.5,0.7*v,0.12); }
+    else { tone(t,'sine',f,f*0.85,0.75*v,0.07); burst(t,f*2,3,0.25*v,0.008); }
   }
-  async function start(mode){
-    if(run){ stop(true); return; }
-    if(!ctx){ const AC=window.AudioContext||window.webkitAudioContext; ctx=new AC({latencyHint:'interactive'}); }
-    try{ await ctx.resume(); }catch(e){}
+
+  // ---------- pitch helpers ----------
+  const WK={0:0,2:1,4:2,5:3,7:4,9:5,11:6};
+  function dia(p){ const o=Math.floor(p/12), r=p-o*12; return WK[r]!=null ? o*7+WK[r] : o*7+WK[r-1]+0.5; }
+
+  // ---------- targets ----------
+  let prepared=null;
+  function buildTargets(ex, range, hands){
+    let lo=0, hi=Infinity;
+    if(range==='up'&&ex.split!=null) hi=ex.split;
+    if(range==='down'&&ex.split!=null) lo=ex.split;
+    const out=[];
+    ['R','L'].forEach(h=>{ if(hands!=='both'&&hands!==h) return;
+      ex[h].forEach(([t,p,d,f])=>{ if(t>=lo&&t<hi) out.push({t16:t-lo,p,d16:d,h,f}); }); });
+    out.sort((a,b)=>a.t16-b.t16||a.p-b.p);
+    out.forEach((n,i)=>n.i=i);
+    out.lo=lo;
+    return out;
+  }
+  function prepare(){
+    if(run) return;
+    const ex=getEx(S.ex);
+    const tg=buildTargets(ex,S.range,S.hands);
+    const s16=60/S.bpm/4;
+    tg.forEach(n=>{ n.t=n.t16*s16; n.dur=n.d16*s16; n.hit=-1; });
+    prepared={ex,targets:tg,s16,played:[],pedals:[],hands:S.hands,range:S.range,bpm:S.bpm,lo:tg.lo,m16:ex.m16||8};
+    viewSession=prepared; scrubMode=false; $('scrub').hidden=true;
+    drawRoll(prepared, -2*s16*4*0 - 0.5);
+  }
+
+  // ---------- session ----------
+  let run=null, timer=null, raf=null, wake=null, viewSession=null, lastSession=null, scrubMode=false;
+  const winFor=s16=>clamp(0.6*s16,0.09,0.2);
+  async function start(calib){
+    if(run){ finish(true); return; }
+    if(!calib && !prepared) prepare();
+    await ensureAudio();
     try{ if(navigator.wakeLock) wake=await navigator.wakeLock.request('screen'); }catch(e){ wake=null; }
-    const calib = mode==='calib';
-    const bpm = calib?80:S.bpm, sub = calib?1:S.sub, beats = calib?8:S.bars*4;
-    const beatDur=60/bpm, step=beatDur/sub, count=4;
-    const T0 = ctx.currentTime + 0.2 + count*beatDur;
-    run = { calib, bpm, sub, step, beatDur, T0, total: beats*sub, end: T0+beats*beatDur,
-      next: -count*sub, notes:[], anchorA: ctx.currentTime, anchorP: performance.now(), lat: calib?0:S.lat };
-    if(!calib){ sampleMode=false; $('sampleBadge').hidden=true; notes=run.notes; curSub=sub; curStep=step; render(); }
-    $('startBtn').textContent='停止'; $('startBtn').classList.add('stop');
-    $('calBtn').disabled=true;
-    $('status').textContent = calib ? '校正中：聽到每一下就彈一個音（數 4 下後開始）' : '預備⋯數完 4 下就開始記錄';
-    $('bigNum').textContent='—'; $('verdict').innerHTML='&nbsp;';
+    let sess;
+    if(calib){
+      const s16=60/80/4, tg=[]; for(let k=0;k<8;k++) tg.push({i:k,t16:k*4,t:k*4*s16,p:-1,h:'R',f:0,d16:4,dur:4*s16,hit:-1});
+      sess={calib:true,targets:tg,s16,played:[],pedals:[]};
+    } else {
+      sess=prepared; sess.played=[]; sess.pedals=[]; sess.targets.forEach(n=>n.hit=-1); sess.sample=false;
+    }
+    const s16=sess.s16, countIn=16; // 4 quarter beats
+    sess.T0 = ctx.currentTime + 0.2 + countIn*s16;
+    sess.anchorA=ctx.currentTime; sess.anchorP=performance.now();
+    sess.lat = calib?0:S.lat;
+    sess.win = calib? 2*s16 : winFor(s16);
+    sess.last16 = Math.max(...sess.targets.map(n=>n.t16+n.d16));
+    sess.endSec = sess.last16*s16;
+    sess.next=-countIn; sess.active=new Map(); sess.pedalDown=false;
+    run=sess; viewSession=sess; scrubMode=false; $('scrub').hidden=true;
+    $('startBtn').textContent='停止'; $('startBtn').classList.add('stop'); $('calBtn').disabled=true;
+    ['rHit','rMiss','rExtra'].forEach(id=>$(id).textContent='0'); $('rOff').textContent='—'; $('rOff').className='';
+    $('status').textContent = calib ? '校正中：聽到每一下就彈一個音（數 4 下後開始）' : '預備⋯數完 4 下就開始';
     timer=setInterval(schedule,25); schedule(); loop();
   }
   function schedule(){
     const r=run; if(!r) return;
-    while(r.next < r.total && r.T0 + r.next*r.step < ctx.currentTime + 0.12){
-      const i=r.next, t=r.T0+i*r.step;
-      if(i % r.sub===0){ const beat=Math.round(i/r.sub); click(t, ((beat%4)+4)%4===0?'accent':'beat'); }
-      else if(!r.calib && S.subClick && i>=0) click(t,'sub');
+    const until = Math.ceil(r.last16);
+    while(r.next<=until && r.T0+r.next*r.s16 < ctx.currentTime+0.12){
+      const i=r.next, t=r.T0+i*r.s16;
+      if(S.sound!=='off' || i<0 || r.calib){
+        if(((i%4)+4)%4===0){ const beat=Math.round(i/4), bpmeas=Math.max(1,Math.round((r.m16||8)/4)); click(t, ((beat%bpmeas)+bpmeas)%bpmeas===0?'accent':'beat'); }
+        else if(!r.calib && S.subClick && i>=0) click(t,'sub');
+      }
       r.next++;
     }
   }
+  function nowRel(r){ return ctx.currentTime - r.T0 - r.lat/1000; }
   function loop(){
     const r=run; if(!r) return;
-    const now=ctx.currentTime;
-    const beatF=(now - r.T0)/r.beatDur;
-    const b=((Math.floor(beatF)%4)+4)%4;
-    document.querySelectorAll('#beats span').forEach((s,i)=>{ s.className = i===b ? ('on'+(i===0?' first':'')) : ''; });
-    $('prog').style.width = clamp((now-r.T0)/(r.end-r.T0),0,1)*100+'%';
-    if(now>=r.T0 && $('status').textContent.startsWith('預備')) $('status').textContent='記錄中⋯';
-    if(now > r.end + r.step){ stop(false); return; }
+    const t=nowRel(r);
+    $('prog').style.width=clamp(t/r.endSec,0,1)*100+'%';
+    if(t>=0 && $('status').textContent.startsWith('預備')) $('status').textContent='記錄中⋯';
+    if(!r.calib){
+      let miss=0; r.targets.forEach(n=>{ if(n.hit<0 && t-n.t>r.win) miss++; });
+      $('rMiss').textContent=miss;
+    }
+    drawRoll(r,t);
+    if(t > r.endSec + 0.6){ finish(false); return; }
     raf=requestAnimationFrame(loop);
   }
-  function stop(aborted){
-    const r=run; run=null;
-    clearInterval(timer); cancelAnimationFrame(raf);
+  function rel(r,perfT){ return r.anchorA + (perfT-r.anchorP)/1000 - r.T0 - r.lat/1000; }
+  function noteOn(perfT,p,v){
+    const r=run; if(!r) return;
+    const x=rel(r,perfT);
+    if(x < -r.win) return;
+    const pl={x,p,v,offX:null,tgt:-1,ped:r.pedalDown};
+    let best=null;
+    for(const n of r.targets){
+      if(n.hit>=0) continue;
+      if(n.t - x > r.win) break;
+      if(x - n.t > r.win) continue;
+      if(!r.calib && n.p!==p) continue;
+      if(!best || Math.abs(n.t-x)<Math.abs(best.t-x)) best=n;
+    }
+    r.played.push(pl); const idx=r.played.length-1;
+    if(best){ best.hit=idx; pl.tgt=best.i; }
+    r.active.set(p,idx);
+    if(r.calib) return;
+    if(best){
+      const off=(x-best.t)*1000, c=Math.abs(off)<=S.tol?'g':off<0?'e':'l';
+      $('rOff').textContent=(off>0?'+':off<0?'−':'')+Math.abs(Math.round(off)); $('rOff').className=c;
+    } else { $('rOff').textContent='錯'; $('rOff').className='x'; }
+    $('rHit').textContent=r.targets.filter(n=>n.hit>=0).length;
+    $('rExtra').textContent=r.played.filter(q=>q.tgt<0).length;
+  }
+  function noteOff(perfT,p){ const r=run; if(!r) return; const idx=r.active.get(p); if(idx==null) return; r.played[idx].offX=rel(r,perfT); r.active.delete(p); }
+  function pedal(perfT,down){ const r=run; if(!r) return; const x=rel(r,perfT);
+    if(down && !r.pedalDown){ r.pedals.push([x,Infinity]); } else if(!down && r.pedalDown && r.pedals.length){ r.pedals[r.pedals.length-1][1]=x; }
+    r.pedalDown=down; }
+  function finish(aborted){
+    const r=run; run=null; clearInterval(timer); cancelAnimationFrame(raf);
     try{ wake&&wake.release(); }catch(e){} wake=null;
     $('startBtn').textContent='開始'; $('startBtn').classList.remove('stop'); $('calBtn').disabled=false;
-    document.querySelectorAll('#beats span').forEach(s=>s.className='');
     if(!r) return;
     if(r.calib){
-      const offs=r.notes.map(n=>n.off).sort((a,b)=>a-b);
-      if(offs.length>=4){
-        const med=offs[Math.floor(offs.length/2)];
-        S.lat=Math.round(med); save(); syncUI();
-        $('status').textContent=`校正完成：延遲補償設為 ${S.lat} ms（收到 ${offs.length} 個音）。`;
-        $('calHint').textContent=`目前延遲補償 ${S.lat} ms。換手機、換耳機或改用藍牙喇叭時，請重新校正。`;
-      }else{
-        $('status').textContent='校正沒有完成：收到的音太少，請再試一次，每一下都彈一個音。';
-      }
-      return;
+      const offs=r.played.filter(q=>q.tgt>=0).map(q=>(q.x-r.targets[q.tgt].t)*1000).sort((a,b)=>a-b);
+      if(offs.length>=4){ S.lat=Math.round(offs[Math.floor(offs.length/2)]); save(); syncUI();
+        $('status').textContent=`校正完成：延遲補償 ${S.lat} ms（收到 ${offs.length} 個音）。`;
+        $('calHint').textContent=`目前延遲補償 ${S.lat} ms。換手機或耳機後請重新校正。`; }
+      else $('status').textContent='校正沒完成：收到的音太少，請再試一次。';
+      prepare(); return;
     }
-    $('status').textContent = aborted ? `已停止，記錄了 ${r.notes.length} 個音。` : `完成！共記錄 ${r.notes.length} 個音。`;
-    render();
+    const tStop = aborted ? nowRelSafe(r) : Infinity;
+    r.cut = tStop;
+    if(r.played.length===0){ $('status').textContent='沒有收到任何音，請確認琴已連接（右上角顯示「已連接」）。'; prepare(); return; }
+    lastSession=r;
+    const rep=analyze(r);
+    if(rep.n<8){ $('status').textContent='彈的音太少，沒有評分。'; renderReport(rep,false); return; }
+    $('status').textContent = aborted ? '已停止，以下是到停止為止的評分。' : '完成！往下看評分，或拖動捲簾下方的滑桿回看。';
+    lastSession=r;
+    pushHistory(r,rep);
+    renderReport(rep,false);
+    enableScrub(r);
   }
-  $('startBtn').onclick=()=>start('session');
-  $('calBtn').onclick=()=>start('calib');
-
-  function input(perfT, pitch){
-    const r=run; if(!r) return;
-    const t = r.anchorA + (perfT - r.anchorP)/1000;
-    const k = Math.round((t - r.T0)/r.step);
-    if(k<0 || k>=r.total) return;
-    const off = (t - (r.T0 + k*r.step))*1000 - r.lat;
-    r.notes.push({k, off, pitch, t});
-    showLive(off, r.step*1000/2);
-    if(!r.calib) render();
-  }
-  function word(off,tol){ return Math.abs(off)<=tol ? ['準','g'] : off<0 ? ['搶拍（早）','e'] : ['拖拍（晚）','l']; }
-  function fmt(v){ return (v>0?'+':v<0?'−':'')+Math.abs(Math.round(v)); }
-  function showLive(off, half){
-    const tol = run&&run.calib ? 1e9 : S.tol;
-    $('bigNum').textContent = fmt(off)+' ms';
-    const [w,c]=word(off,tol);
-    $('verdict').textContent = run&&run.calib ? '校正中' : w; $('verdict').className='verdict '+(run&&run.calib?'':c);
-    $('bigNum').className='big '+(run&&run.calib?'':c);
-    $('needle').style.left = (50 + clamp(off/half,-1,1)*50)+'%';
-  }
+  function nowRelSafe(r){ try{ return ctx.currentTime - r.T0 - r.lat/1000; }catch(e){ return Infinity; } }
+  $('startBtn').onclick=()=>start(false);
+  $('calBtn').onclick=()=>start(true);
 
   // ---------- analysis ----------
-  let notes=[], curSub=4, curStep=0.25, sampleMode=true;
-  function assignHands(list){
-    const groups=new Map();
-    list.forEach(n=>{ if(!groups.has(n.k)) groups.set(n.k,[]); groups.get(n.k).push(n); });
-    let lastL=null,lastR=null;
-    [...groups.keys()].sort((a,b)=>a-b).forEach(k=>{
-      const g=groups.get(k);
-      if(g.some(n=>n.pitch==null)){ g.forEach(n=>n.hand='S'); return; }
-      g.sort((a,b)=>a.pitch-b.pitch);
-      if(g.length>=2){
-        g.forEach((n,i)=>{ n.hand = i===0?'L': i===g.length-1?'R': (Math.abs(n.pitch-g[0].pitch)<Math.abs(n.pitch-g[g.length-1].pitch)?'L':'R'); });
-        lastL=g[0].pitch; lastR=g[g.length-1].pitch;
-      }else{
-        const n=g[0];
-        if(lastL!=null&&lastR!=null){ n.hand = Math.abs(n.pitch-lastL)<=Math.abs(n.pitch-lastR)?'L':'R'; if(n.hand==='L')lastL=n.pitch; else lastR=n.pitch; }
-        else n.hand='S';
+  function stats(a){ if(!a.length) return null; const m=a.reduce((s,x)=>s+x,0)/a.length; const sd=Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/a.length); return {m,sd,n:a.length}; }
+  function underPedal(r,x){ return r.pedals.some(([a,b])=>x>=a&&x<=b); }
+  function analyze(r){
+    const tol=S.tol, cut=r.cut==null?Infinity:r.cut;
+    const T=r.targets.filter(n=>n.t<=cut);
+    const P=r.played;
+    const hits=T.filter(n=>n.hit>=0);
+    const missed=T.filter(n=>n.hit<0);
+    // wrong vs extra
+    let wrong=0, extra=0; const usedMiss=new Set();
+    P.forEach(q=>{ if(q.tgt>=0) return;
+      const m=missed.find(n=>!usedMiss.has(n.i) && Math.abs(n.t-q.x)<=r.win);
+      if(m){ usedMiss.add(m.i); wrong++; } else extra++; });
+    const off=n=>(P[n.hit].x-n.t)*1000;
+    const hand={};
+    ['R','L'].forEach(h=>{
+      const th=T.filter(n=>n.h===h); if(!th.length) return;
+      const hh=th.filter(n=>n.hit>=0);
+      const offs=hh.map(off), vels=hh.map(n=>P[n.hit].v);
+      const ts=stats(offs), vs=stats(vels);
+      // legato
+      let good=0,gap=0,blur=0,ped=0; const ovs=[];
+      for(let k=0;k<th.length-1;k++){
+        const a=th[k], b=th[k+1];
+        if(Math.abs(b.t-(a.t+a.dur))>0.01) continue;
+        if(a.hit<0||b.hit<0) continue;
+        const pa=P[a.hit], pb=P[b.hit];
+        if(pa.offX==null) continue;
+        if(underPedal(r,pb.x)){ ped++; continue; }
+        const ov=(pa.offX-pb.x)*1000; ovs.push(ov);
+        if(ov< -15) gap++; else if(ov>80) blur++; else good++;
       }
+      const lg=good+gap+blur;
+      // fingers
+      const fing={};
+      for(let f=1;f<=5;f++){ const fh=hh.filter(n=>n.f===f); if(fh.length<3) continue;
+        fing[f]={t:stats(fh.map(off)), v:stats(fh.map(n=>P[n.hit].v))}; }
+      hand[h]={n:th.length,hit:hh.length,miss:th.length-hh.length,ts,vs,cv:vs&&vs.m?vs.sd/vs.m:null,
+        inTol:hh.filter(n=>Math.abs(off(n))<=tol).length, near:hh.filter(n=>Math.abs(off(n))<=2*tol&&Math.abs(off(n))>tol).length,
+        lg:{good,gap,blur,ped,n:lg,ovm:stats(ovs)}, fing};
     });
-    return groups;
+    const N=T.length;
+    const noteScore = N? 100*hits.length/(N+extra) : 0;
+    const timScore = hits.length? 100*hits.reduce((s,n)=>{const o=Math.abs(off(n)); return s+(o<=tol?1:o<=2*tol?0.5:0);},0)/hits.length : 0;
+    const hs=Object.values(hand);
+    const cvs=hs.map(x=>x.cv).filter(x=>x!=null);
+    const cv=cvs.length? cvs.reduce((a,b)=>a+b,0)/cvs.length : null;
+    const evScore = cv==null? null : clamp(100*(1-(cv-0.06)/0.24),0,100);
+    const lgN=hs.reduce((s,x)=>s+x.lg.n,0), lgGood=hs.reduce((s,x)=>s+x.lg.good,0), lgPed=hs.reduce((s,x)=>s+x.lg.ped,0);
+    const lgScore = lgN>=6 && lgPed < lgN ? 100*lgGood/lgN : null;
+    const parts=[['音',noteScore,.35],['拍子',timScore,.30],['力度均勻',evScore,.20],['連奏',lgScore,.15]];
+    let w=0,sum=0; parts.forEach(([,v,wt])=>{ if(v!=null){ w+=wt; sum+=v*wt; } });
+    const total=Math.round(w?sum/w:0);
+    const allOffs=hits.map(off);
+    return {n:N,hits:hits.length,missed,wrong,extra,hand,parts,total,ts:stats(allOffs),lgPed,
+      missMeasures:[...new Set(missed.map(n=>Math.floor((n.t16+(r.lo||0))/(r.m16||8))+1))].sort((a,b)=>a-b)};
   }
-  function summary(list,tol){
-    if(!list.length) return null;
-    const m=list.reduce((a,n)=>a+n.off,0)/list.length;
-    const sd=Math.sqrt(list.reduce((a,n)=>a+(n.off-m)**2,0)/list.length);
-    const inn=list.filter(n=>Math.abs(n.off)<=tol).length/list.length;
-    return {n:list.length,m,sd,inn};
-  }
-  const slotNames={2:['拍點','&'],3:['拍點','第 2','第 3'],4:['拍點 1','e','&','a']};
 
-  function render(){
-    const tol=S.tol;
-    const groups=assignHands(notes);
-    const all=summary(notes,tol);
-    $('sMean').textContent = all? fmt(all.m)+' ms':'—';
-    $('sMean').className = all? word(all.m,tol)[1]:'';
-    $('sSd').textContent = all? Math.round(all.sd)+' ms':'—';
-    $('sIn').textContent = all? Math.round(all.inn*100)+'%':'—';
-
-    const rows=[['左手','L'],['右手','R'],['單音／點擊','S']].map(([lab,h])=>{
-      const s=summary(notes.filter(n=>n.hand===h),tol); if(!s) return '';
-      const c=word(s.m,tol)[1];
-      return `<tr><td>${lab}</td><td class="num">${s.n}</td><td class="num ${c}">${fmt(s.m)} ms</td><td class="num">${Math.round(s.sd)} ms</td><td class="num">${Math.round(s.inn*100)}%</td></tr>`;
-    }).join('');
-    $('handRows').innerHTML = rows || '<tr><td colspan="5" style="text-align:left;color:var(--muted)">還沒有資料</td></tr>';
-
-    // slots
-    const names=slotNames[curSub]||[];
-    const half=curStep*1000/2;
-    let worst=null;
-    $('slots').innerHTML = names.map((nm,i)=>{
-      const s=summary(notes.filter(n=>((n.k%curSub)+curSub)%curSub===i),tol);
-      if(!s) return `<div class="slot"><span>${nm}</span><div class="bar"></div><span class="v">—</span></div>`;
-      if(!worst||Math.abs(s.m)>Math.abs(worst.m)) worst={m:s.m,nm};
-      const w=clamp(Math.abs(s.m)/half,0,1)*50, c=word(s.m,tol)[1];
-      const pos = s.m<0 ? `right:50%;width:${w}%` : `left:50%;width:${w}%`;
-      return `<div class="slot"><span>${nm}</span><div class="bar"><i style="${pos};background:var(--${c==='g'?'good':c==='e'?'early':'late'})"></i></div><span class="v ${c}">${fmt(s.m)} ms</span></div>`;
-    }).join('');
-
-    // hand sync
-    let diffs=[];
-    groups.forEach(g=>{ const L=g.find(n=>n.hand==='L'), R=g.find(n=>n.hand==='R'); if(L&&R) diffs.push((R.t-L.t)*1000); });
-    if(diffs.length>=4){
-      const d=diffs.reduce((a,b)=>a+b,0)/diffs.length;
-      $('syncLine').textContent = Math.abs(d)<8 ? `左右手對齊良好：平均相差 ${Math.abs(Math.round(d))} ms。` : `兩手同時彈的音，${d>0?'右手比左手晚':'左手比右手晚'}平均 ${Math.abs(Math.round(d))} ms。`;
-    } else $('syncLine').textContent='';
-
-    // takeaway
+  // ---------- report ----------
+  const HN={R:'右手',L:'左手'};
+  const fmt=v=>(v>0?'+':v<0?'−':'')+Math.abs(Math.round(v));
+  function cls(off){ return Math.abs(off)<=S.tol?'g':off<0?'e':'l'; }
+  function renderReport(rep,isSample){
+    $('sampleBadge').hidden=!isSample;
+    const sess=isSample?sampleSess:lastSession;
+    $('repMeta').textContent = sess ? `${getExName(sess.ex)}・${sess.bpm} BPM・${rangeName(sess.range)}・${handsName(sess.hands)}` : '';
+    $('tScore').innerHTML=`${rep.total}<small>/100</small>`;
+    const g = rep.total>=90?['優秀','g']:rep.total>=75?['不錯','g']:rep.total>=60?['還可以，再穩一點','l']:['先放慢速度','x'];
+    $('tGrade').textContent=g[0]; $('tGrade').className='grade '+g[1];
+    $('parts').innerHTML=rep.parts.map(([nm,v])=>`<div class="part"><span>${nm}</span><div class="bar"><i style="width:${v==null?0:v}%;background:var(--${v==null?'line':v>=85?'good':v>=65?'late':'bad'})"></i></div><span class="v">${v==null?'—':Math.round(v)}</span></div>`).join('');
+    // hand rows
+    $('handRows').innerHTML=['R','L'].map(h=>{ const x=rep.hand[h]; if(!x) return '';
+      return `<tr><td>${HN[h]}</td><td class="num">${x.hit}/${x.n}</td><td class="num ${x.miss?'x':''}">${x.miss}</td>
+      <td class="num ${x.ts?cls(x.ts.m):''}">${x.ts?fmt(x.ts.m)+' ms':'—'}</td><td class="num">${x.ts?'±'+Math.round(x.ts.sd)+' ms':'—'}</td>
+      <td class="num">${x.cv!=null?Math.round(x.cv*100)+'%':'—'}</td><td class="num">${x.lg.n?Math.round(100*x.lg.good/x.lg.n)+'%':'—'}</td></tr>`; }).join('');
+    // fingers
+    const fh=['R','L'].filter(h=>rep.hand[h] && Object.keys(rep.hand[h].fing).length);
+    $('fingers').innerHTML = fh.length ? fh.map(h=>{
+      const x=rep.hand[h], half=Math.max(S.tol*2,40), vm=x.vs?x.vs.m:1;
+      const rows=[1,2,3,4,5].map(f=>{ const d=x.fing[f]; if(!d) return `<div class="frow"><span>${f} 指</span><div class="mini"></div><div class="mini"></div></div>`;
+        const to=d.t.m, tw=clamp(Math.abs(to)/half,0,1)*50, tc=cls(to);
+        const vr=(d.v.m-vm)/vm, vw=clamp(Math.abs(vr)/0.3,0,1)*50, vc=vr< -0.1?'bad':vr>0.1?'late':'good';
+        return `<div class="frow"><span>${f} 指</span>
+          <div class="mini"><i style="${to<0?'right':'left'}:50%;width:${tw}%;background:var(--${tc==='g'?'good':tc==='e'?'early':'late'})"></i><span>${fmt(to)}</span></div>
+          <div class="mini"><i style="${vr<0?'right':'left'}:50%;width:${vw}%;background:var(--${vc})"></i><span>${fmt(vr*100)}%</span></div></div>`; }).join('');
+      return `<div class="fhand"><div class="frow head"><span>${HN[h]}</span><span>拍子 ms</span><span>力度</span></div>${rows}</div>`; }).join('')
+      : '<p class="hint">這份譜沒有指法資料（匯入的曲子），所以沒有各指分析。</p>';
+    // legato line
+    const lines=['R','L'].filter(h=>rep.hand[h]&&rep.hand[h].lg.n).map(h=>{ const l=rep.hand[h].lg;
+      return `${HN[h]}：連奏良好 ${Math.round(100*l.good/l.n)}%、斷開 ${Math.round(100*l.gap/l.n)}%、重疊太多 ${Math.round(100*l.blur/l.n)}%${l.ovm?`（平均重疊 ${fmt(l.ovm.m)} ms）`:''}`; });
+    $('legatoLine').innerHTML = (lines.length?lines.join('<br>'):'連奏資料不足。') + '<br>前一音在下一音按下後 0–80 ms 內放開算「連奏良好」；太早放開是斷開，太晚放開會糊在一起。' + (rep.lgPed?`<br>有 ${rep.lgPed} 個音踩著踏板，連奏沒有計入。哈農建議不踩踏板。`:'');
+    // takeaways
     const tk=[];
-    if(all){
-      const [w,c]=word(all.m,tol);
-      tk.push(c==='g' ? `整體很準，平均只偏 ${fmt(all.m)} ms。` : `整體偏向<b class="${c}">${w}</b>，平均 ${fmt(all.m)} ms。`);
-      tk.push(all.sd<=tol*0.8 ? '每個音的間隔很平均。' : `音和音的間隔不太平均（標準差 ${Math.round(all.sd)} ms），先放慢速度練均勻。`);
-      if(worst && Math.abs(worst.m)>tol) tk.push(`每拍裡的「${worst.nm}」最不準（${fmt(worst.m)} ms），留意那個位置的手指。`);
-    }else tk.push('按「開始」彈一段，結果會出現在這裡。');
-    $('takeaway').innerHTML = (sampleMode?'<span style="color:var(--muted)">以下是範例：</span>':'') + tk.map(x=>`<div>${x}</div>`).join('');
-    drawChart(tol);
+    if(rep.missed.length) tk.push(`漏彈 ${rep.missed.length} 個音${rep.wrong?`（其中 ${rep.wrong} 個彈成錯音）`:''}，集中在第 ${rep.missMeasures.slice(0,6).join('、')}${rep.missMeasures.length>6?' 等':''} 小節。`);
+    else tk.push('所有音都彈到了。');
+    if(rep.ts){ const c=cls(rep.ts.m); tk.push(c==='g'?`拍子整體很準（平均 ${fmt(rep.ts.m)} ms），穩定度 ±${Math.round(rep.ts.sd)} ms。`:`整體${c==='e'?'偏早（搶拍）':'偏晚（拖拍）'}，平均 ${fmt(rep.ts.m)} ms。`); }
+    let worstV=null, worstT=null;
+    ['R','L'].forEach(h=>{ const x=rep.hand[h]; if(!x||!x.vs) return; Object.entries(x.fing).forEach(([f,d])=>{
+      const vr=(d.v.m-x.vs.m)/x.vs.m; if(!worstV||vr<worstV.vr) worstV={h,f,vr};
+      if(!worstT||Math.abs(d.t.m)>Math.abs(worstT.m)) worstT={h,f,m:d.t.m}; }); });
+    if(worstV && worstV.vr< -0.08) tk.push(`${HN[worstV.h]}第 ${worstV.f} 指最弱，力度比這隻手平均小 ${Math.round(-worstV.vr*100)}%。哈農就是要練這個，彈到它時刻意送重一點。`);
+    if(worstT && Math.abs(worstT.m)>S.tol) tk.push(`${HN[worstT.h]}第 ${worstT.f} 指最常${worstT.m<0?'搶拍':'拖拍'}（平均 ${fmt(worstT.m)} ms）。`);
+    const lgBad=['R','L'].map(h=>rep.hand[h]).filter(x=>x&&x.lg.n).map(x=>x.lg).reduce((a,l)=>({gap:a.gap+l.gap,blur:a.blur+l.blur,n:a.n+l.n}),{gap:0,blur:0,n:0});
+    if(lgBad.n && lgBad.gap/lgBad.n>0.3) tk.push('很多音在下一個音之前就放開了，聽起來會斷斷續續；手指等下一個音按下再離鍵。');
+    else if(lgBad.n && lgBad.blur/lgBad.n>0.3) tk.push('很多音放開得太晚，會糊在一起；下一個音按下時，前一指就要抬起。');
+    $('takeaway').innerHTML=(isSample?'<div style="color:var(--muted)">以下是範例資料，彈一次就會換成你的結果。</div>':'')+tk.map(x=>`<div>${x}</div>`).join('');
+    renderHistory();
+  }
+  function getExName(ex){ return ex.builtin?`哈農第 ${ex.key} 條`:ex.name; }
+  const rangeName=r=>({all:'全曲',up:'上行',down:'下行'})[r]||'全曲';
+  const handsName=h=>({both:'雙手',R:'右手',L:'左手'})[h]||'雙手';
+
+  // ---------- history ----------
+  function pushHistory(r,rep){
+    const k=r.ex.key; const list=history[k]||[];
+    list.unshift({d:Date.now(),bpm:r.bpm,range:r.range,hands:r.hands,total:rep.total,p:rep.parts.map(x=>x[1]==null?null:Math.round(x[1]))});
+    history[k]=list.slice(0,20); saveJSON('hanon2-history',history); fillSelect();
+  }
+  function renderHistory(){
+    const list=history[getEx(S.ex).key]||[];
+    if(!list.length){ $('histRows').innerHTML='<tr><td colspan="8" style="text-align:left;color:var(--muted)">這條還沒有紀錄。</td></tr>'; return; }
+    const best=Math.max(...list.map(x=>x.total));
+    $('histRows').innerHTML=list.slice(0,8).map(x=>{ const dt=new Date(x.d);
+      return `<tr><td>${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</td><td class="num">${x.bpm}</td><td>${rangeName(x.range)}・${handsName(x.hands)}</td><td class="num ${x.total===best?'best':''}">${x.total}</td>${x.p.map(v=>`<td class="num">${v==null?'—':v}</td>`).join('')}</tr>`; }).join('');
   }
 
-  function drawChart(tol){
-    const cv=$('chart'), dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
-    if(!W) return;
-    cv.width=W*dpr; cv.height=H*dpr;
-    const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
-    const cs=getComputedStyle(document.documentElement), tok=n=>cs.getPropertyValue(n).trim();
-    const half=Math.max(tol*2, Math.min(curStep*1000/2, 120));
-    const padL=40,padR=8,padT=8,padB=18, pw=W-padL-padR, ph=H-padT-padB;
-    const y=v=>padT+ph/2 - clamp(v/half,-1,1)*ph/2;
-    g.clearRect(0,0,W,H);
-    g.fillStyle=tok('--good'); g.globalAlpha=.14; g.fillRect(padL,y(tol),pw,y(-tol)-y(tol)); g.globalAlpha=1;
-    g.font='11px '+tok('--f-num'); g.fillStyle=tok('--muted'); g.textAlign='right'; g.textBaseline='middle';
-    const tickV=Math.round(half/2);
-    [-tickV*2,-tickV,0,tickV,tickV*2].forEach(v=>{
-      if(Math.abs(v)>half) return;
-      g.strokeStyle=tok('--line'); g.lineWidth=v===0?1.5:1; g.beginPath(); g.moveTo(padL,y(v)); g.lineTo(W-padR,y(v)); g.stroke();
-      g.fillText((v>0?'+':'')+v,padL-6,y(v));
+  // ---------- piano roll ----------
+  const cvs=$('roll');
+  function tok(){ const cs=getComputedStyle(document.documentElement); const o={}; ['--ink','--muted','--line','--soft','--surface','--accent','--early','--late','--good','--bad','--rh','--lh','--f-num'].forEach(k=>o[k]=cs.getPropertyValue(k).trim()); return o; }
+  function drawRoll(sess,cur){
+    if(!sess) return;
+    const dpr=window.devicePixelRatio||1, W=cvs.clientWidth, H=cvs.clientHeight; if(!W) return;
+    if(cvs.width!==Math.round(W*dpr)||cvs.height!==Math.round(H*dpr)){ cvs.width=Math.round(W*dpr); cvs.height=Math.round(H*dpr); }
+    const g=cvs.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+    const C=tok(), s16=sess.s16;
+    const px = (W*0.72)/(16*s16), headX=W*0.22;
+    const X = t => headX + (t-cur)*px;
+    const hands = sess.calib?['R']:['R','L'].filter(h=>sess.targets.some(n=>n.h===h));
+    const top=16, laneGap=8, laneH=(H-top-6-laneGap*(hands.length-1))/hands.length;
+    const lanes={};
+    hands.forEach((h,k)=>{
+      const ps=sess.targets.filter(n=>n.h===h).map(n=>dia(n.p));
+      const lo=sess.calib?0:Math.min(...ps)-1, hi=sess.calib?2:Math.max(...ps)+1;
+      lanes[h]={y0:top+k*(laneH+laneGap), lo, hi};
     });
-    g.textAlign='left'; g.textBaseline='bottom';
-    g.fillText('晚',2,padT+12); g.textBaseline='top'; g.fillText('早',2,H-padB-12);
-    if(!notes.length) return;
-    const maxK=Math.max(...notes.map(n=>n.k),1);
-    const col={L:tok('--lh'),R:tok('--rh'),S:tok('--muted')};
-    notes.forEach(n=>{
-      const x=padL+ (n.k/maxK)*pw;
-      g.fillStyle=col[n.hand]||col.S;
-      g.beginPath(); g.arc(clamp(x,padL+3,W-padR-3), y(n.off), 3, 0, Math.PI*2); g.fill();
-    });
-    g.fillStyle=tok('--muted'); g.textAlign='center'; g.textBaseline='top';
-    const beatsTotal=Math.ceil(maxK/curSub);
-    g.fillText('第 1 拍',padL+20,H-padB+4); g.fillText(`第 ${beatsTotal} 拍`,W-padR-24,H-padB+4);
-  }
-  window.addEventListener('resize',()=>drawChart(S.tol));
-  if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>drawChart(S.tol));
-  new MutationObserver(()=>drawChart(S.tol)).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-
-  // ---------- sample session (shown until a real one runs) ----------
-  (function sample(){
-    let seed=7; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
-    const gauss=()=>{let s=0;for(let i=0;i<6;i++)s+=rnd();return (s-3);};
-    const step=0.25, out=[];
-    for(let k=0;k<64;k++){
-      const slot=k%4;
-      const base = slot===2? 22 : slot===0? -4 : 6;
-      const lt=k*step+(base+gauss()*9)/1000, rt=k*step+(base-10+gauss()*8)/1000;
-      out.push({k,off:(lt-k*step)*1000,pitch:48+(k%8),t:lt});
-      out.push({k,off:(rt-k*step)*1000,pitch:60+(k%8),t:rt});
+    const Y=(h,p)=>{ const L=lanes[h]; const d=sess.calib?1:dia(p); return L.y0 + laneH - ((d-L.lo)/(L.hi-L.lo))*laneH; };
+    // lanes bg + labels
+    g.font='11px '+C['--f-num'];
+    hands.forEach(h=>{ const L=lanes[h]; g.fillStyle=C['--surface']; g.fillRect(0,L.y0,W,laneH);
+      g.fillStyle=C['--muted']; g.textBaseline='top'; g.textAlign='left'; g.fillText(sess.calib?'校正':HN[h],6,L.y0+4); });
+    // measure lines (2/4 => 8 sixteenths)
+    const t0=cur-headX/px, t1=cur+(W-headX)/px;
+    const M=(sess.m16||8), off16=(sess.lo||0)%M, base=Math.floor((sess.lo||0)/M);
+    const mt=k=>(k*M-off16)*s16;
+    const m0=Math.floor((t0/s16+off16)/M), m1=Math.ceil((t1/s16+off16)/M);
+    g.textAlign='center'; g.textBaseline='top';
+    for(let m=Math.max(0,m0);m<=m1;m++){ const x=X(mt(m)); if(mt(m)<-1e-6) continue; g.strokeStyle=C['--line']; g.lineWidth=1; g.beginPath(); g.moveTo(x,top-2); g.lineTo(x,H); g.stroke();
+      if(!sess.calib){ g.fillStyle=C['--muted']; g.fillText(String(base+m+1),x+10,2); } }
+    // targets
+    const done = !run || run!==sess;
+    for(const n of sess.targets){
+      const x=X(n.t), w=Math.max(3,n.dur*px-3);
+      if(x+w<0||x>W) continue;
+      const y=Y(n.h,n.p), bh=12;
+      let fill=null, stroke=null, alpha=1;
+      if(n.hit>=0){ const off=(sess.played[n.hit].x-n.t)*1000; const c=cls(off); fill=C[c==='g'?'--good':c==='e'?'--early':'--late']; }
+      else if((done && sess.played.length) || (cur-n.t>sess.win)){ stroke=C['--bad']; }
+      else { fill=C[n.h==='R'?'--rh':'--lh']; alpha=0.3; }
+      g.globalAlpha=alpha;
+      if(fill){ g.fillStyle=fill; roundRect(g,x,y-bh/2,w,bh,3); g.fill(); }
+      g.globalAlpha=1;
+      if(stroke){ g.strokeStyle=stroke; g.lineWidth=2; roundRect(g,x+1,y-bh/2+1,w-2,bh-2,3); g.stroke(); }
+      if(n.f && w>=11){ g.fillStyle=n.hit>=0?C['--surface']:C['--ink']; g.font='600 10px '+C['--f-num']; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(n.f),x+Math.min(w,14)/2,y+0.5); }
     }
-    notes=out; curSub=4; curStep=step;
-  })();
-  render();
+    // extra / wrong played
+    if(!sess.calib) for(const q of sess.played){ if(q.tgt>=0) continue; const x=X(q.x); if(x<0||x>W) continue;
+      let h=hands[0]; if(hands.length>1){ const dR=Math.abs(dia(q.p)-(lanes.R.lo+lanes.R.hi)/2), dL=Math.abs(dia(q.p)-(lanes.L.lo+lanes.L.hi)/2); h=dR<=dL?'R':'L'; }
+      const L=lanes[h]; const y=clamp(Y(h,q.p),L.y0+5,L.y0+laneH-5);
+      g.fillStyle=C['--bad']; g.beginPath(); g.arc(x,y,4,0,Math.PI*2); g.fill(); }
+    // playhead
+    g.strokeStyle=C['--accent']; g.lineWidth=2; g.beginPath(); g.moveTo(headX,top-4); g.lineTo(headX,H); g.stroke();
+  }
+  function roundRect(g,x,y,w,h,r){ r=Math.min(r,w/2,h/2); g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+  function enableScrub(sess){
+    scrubMode=true; viewSession=sess; const sc=$('scrub'); sc.hidden=false;
+    let firstBad = sess.targets.find(n=>n.hit<0 && n.t<= (sess.cut??Infinity));
+    sc.value = firstBad ? Math.round(1000*clamp(firstBad.t/sess.endSec,0,1)) : 0;
+    drawRoll(sess, (+sc.value/1000)*sess.endSec);
+  }
+  $('scrub').oninput=()=>{ if(viewSession && scrubMode) drawRoll(viewSession,(+$('scrub').value/1000)*viewSession.endSec); };
+  window.addEventListener('resize',()=>{ if(!run&&viewSession) drawRoll(viewSession, scrubMode?(+$('scrub').value/1000)*viewSession.endSec:-0.5); });
+  new MutationObserver(()=>{ if(!run&&viewSession) drawRoll(viewSession, scrubMode?(+$('scrub').value/1000)*viewSession.endSec:-0.5); }).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  // ---------- MIDI file import ----------
+  function parseSMF(buf){
+    const v=new DataView(buf); let o=0;
+    const str=n=>{ let s=''; for(let i=0;i<n;i++) s+=String.fromCharCode(v.getUint8(o+i)); return s; };
+    if(str(4)!=='MThd') throw new Error('不是 MIDI 檔');
+    const hl=v.getUint32(o+4); const ntr=v.getUint16(o+10), div=v.getUint16(o+12); o+=8+hl;
+    if(div&0x8000) throw new Error('不支援 SMPTE 時間格式');
+    const notes=[]; let ts16=null;
+    for(let t=0;t<ntr && o<v.byteLength;t++){
+      if(str(4)!=='MTrk'){ break; }
+      const len=v.getUint32(o+4); let p=o+8; const end=p+len; o=end;
+      let tick=0, rs=0; const open={};
+      const vlq=()=>{ let x=0,b; do{ b=v.getUint8(p++); x=(x<<7)|(b&0x7f);}while(b&0x80); return x; };
+      while(p<end){
+        tick+=vlq(); let st=v.getUint8(p);
+        if(st<0x80){ st=rs; } else { p++; if(st<0xF0) rs=st; }
+        if(st===0xFF){ const mt=v.getUint8(p++); const l=vlq(); if(mt===0x58&&ts16==null&&l>=2){ ts16=Math.round(v.getUint8(p)*16/Math.pow(2,v.getUint8(p+1))); } p+=l; continue; }
+        if(st===0xF0||st===0xF7){ const l=vlq(); p+=l; continue; }
+        const type=st&0xF0, ch=st&0x0F;
+        const d1=v.getUint8(p++); const d2=(type===0xC0||type===0xD0)?0:v.getUint8(p++);
+        if(type===0x90 && d2>0){ (open[ch+'-'+d1]=open[ch+'-'+d1]||[]).push(notes.length); notes.push({tick,p:d1,ch,tr:t,end:null}); }
+        else if(type===0x80 || (type===0x90&&d2===0)){ const a=open[ch+'-'+d1]; if(a&&a.length){ notes[a.shift()].end=tick; } }
+      }
+    }
+    if(!notes.length) throw new Error('檔案裡沒有音符');
+    notes.forEach(n=>{ if(n.end==null) n.end=n.tick+div/4; });
+    // hands
+    const groupKey=n=>n.tr+'|'+n.ch;
+    const groups={}; notes.forEach(n=>(groups[groupKey(n)]=groups[groupKey(n)]||[]).push(n));
+    const keys=Object.keys(groups);
+    if(keys.length>=2){
+      const avg=k=>groups[k].reduce((s,n)=>s+n.p,0)/groups[k].length;
+      keys.sort((a,b)=>avg(a)-avg(b)); const lo=avg(keys[0]), hi=avg(keys[keys.length-1]);
+      keys.forEach(k=>{ const h=Math.abs(avg(k)-lo)<=Math.abs(avg(k)-hi)?'L':'R'; groups[k].forEach(n=>n.h=h); });
+    } else {
+      const byT={}; notes.forEach(n=>(byT[n.tick]=byT[n.tick]||[]).push(n));
+      let lastL=48,lastR=72;
+      Object.keys(byT).map(Number).sort((a,b)=>a-b).forEach(t=>{ const g=byT[t].sort((a,b)=>a.p-b.p);
+        if(g.length>=2){ g.forEach((n,i)=>n.h=i<g.length/2?'L':'R'); lastL=g[0].p; lastR=g[g.length-1].p; }
+        else { const n=g[0]; n.h=Math.abs(n.p-lastL)<Math.abs(n.p-lastR)?'L':'R'; if(n.h==='L')lastL=n.p; else lastR=n.p; } });
+    }
+    const first=Math.min(...notes.map(n=>n.tick));
+    const q=x=>Math.round(x*4/div*1000)/1000;
+    const R=[],L=[];
+    notes.sort((a,b)=>a.tick-b.tick||a.p-b.p).forEach(n=>{ const t=q(n.tick-first), d=Math.max(0.25,q(n.end-n.tick)); (n.h==='L'?L:R).push([t,n.p,Math.min(d,16),0]); });
+    const len=Math.max(...notes.map(n=>q(n.end-first)));
+    return {R,L,len,m16:ts16||16};
+  }
+  $('midiFile').onchange=async e=>{
+    const f=e.target.files[0]; if(!f) return;
+    try{
+      const res=parseSMF(await f.arrayBuffer());
+      const name=f.name.replace(/\.(mid|midi)$/i,'');
+      const entry={key:'imp-'+Date.now(),name,R:res.R,L:res.L,len:res.len,split:null,m16:res.m16,builtin:false};
+      imports.push(entry);
+      if(!saveJSON('hanon2-imports',imports)){ $('impMsg').textContent='已匯入，但手機空間不足，重新整理後會消失。'; }
+      else $('impMsg').textContent=`已匯入「${name}」：右手 ${res.R.length} 音、左手 ${res.L.length} 音。`;
+      S.ex=entry.key; save(); fillSelect(); syncUI(); prepare(); renderHistory();
+    }catch(err){ $('impMsg').textContent='匯入失敗：'+(err.message||err); }
+    e.target.value='';
+  };
+  let delArmed=false;
+  $('delImp').onclick=()=>{
+    const ex=getEx(S.ex); if(ex.builtin) return;
+    if(!delArmed){ delArmed=true; $('delImp').textContent=`再按一次，刪除「${ex.name}」`; setTimeout(()=>{delArmed=false;$('delImp').textContent='刪除目前選的匯入曲目';},4000); return; }
+    delArmed=false; imports=imports.filter(x=>x.key!==ex.key); saveJSON('hanon2-imports',imports);
+    delete history[ex.key]; saveJSON('hanon2-history',history);
+    S.ex='1'; save(); fillSelect(); syncUI(); prepare(); renderHistory(); $('delImp').textContent='刪除目前選的匯入曲目';
+  };
+
+  // ---------- sample session ----------
+  let sampleSess=null;
+  function makeSample(){
+    let seed=11; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+    const gs=()=>{let s=0;for(let i=0;i<6;i++)s+=rnd();return s-3;};
+    const ex=getEx('1'), s16=60/60/4;
+    const tg=buildTargets(ex,'all','both'); tg.forEach(n=>{n.t=n.t16*s16;n.dur=n.d16*s16;n.hit=-1;});
+    const sess={ex,targets:tg,s16,played:[],pedals:[],hands:'both',range:'all',bpm:60,sample:true,win:winFor(s16),lo:0,m16:8};
+    const missIdx=new Set([41,42,180,311]);
+    tg.forEach(n=>{
+      if(missIdx.has(n.i)) return;
+      let off = n.h==='R' ? -6+gs()*10 : 10+gs()*12; if(n.h==='L'&&n.f===5) off+=22; if(n.h==='R'&&n.f===4) off-=12;
+      let v = (n.h==='R'?78:72)+gs()*5; if(n.h==='R'&&(n.f===4||n.f===5)) v-=13; if(n.h==='L'&&n.f===4) v-=8;
+      sess.played.push({x:n.t+off/1000,p:n.p,v:Math.round(v),offX:null,tgt:n.i}); n.hit=sess.played.length-1;
+    });
+    sess.played.push({x:tg[42].t+0.01,p:tg[42].p+2,v:60,offX:null,tgt:-1});
+    sess.played.push({x:tg[300].t+0.12,p:tg[300].p+1,v:50,offX:null,tgt:-1});
+    tg.forEach(n=>{ if(n.hit<0) return; const nx=tg.find(m=>m.h===n.h&&m.t16===n.t16+n.d16);
+      const base = nx ? nx.t : n.t+n.dur; sess.played[n.hit].offX = base + (n.h==='R'? 0.03+gs()*0.02 : -0.03+gs()*0.03); });
+    sess.last16=Math.max(...tg.map(n=>n.t16+n.d16)); sess.endSec=sess.last16*s16; sess.cut=Infinity;
+    return sess;
+  }
+
+  // ---------- boot ----------
+  fillSelect(); syncUI(); prepare();
+  sampleSess=makeSample();
+  lastSession=null;
+  renderReport(analyze(sampleSess),true);
+  viewSession=sampleSess; enableScrub(sampleSess);
+  $('status').textContent='上方捲簾是範例的回放。接上琴後按開始，會先數 4 下再開始。';
 })();
 </script>
-</body>
-</html>
+</body></html>
