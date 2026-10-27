@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>哈農節拍檢查</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&display=swap">
+<style>
+/* Layout: one narrow practice-stand column — settings, a big live readout, then the session report. */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#d6dde4; --soft:#f5f7f9;
+  --accent:#a3263a; --accent-ink:#ffffff;
+  --early:#2f6fb2; --late:#b8700c; --good:#2a8653;
+  --lh:#6a4fb3; --rh:#a3263a;
+  --f-display:"Noto Serif TC","Songti TC",serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151b; --surface:#19212a; --ink:#e6ebf0; --muted:#98a4b1; --line:#2c3743; --soft:#141b22;
+  --accent:#e0566b; --accent-ink:#1a0c10;
+  --early:#6ea9ea; --late:#e8a23a; --good:#4fbf82; --lh:#a891f2; --rh:#e0566b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151b; --surface:#19212a; --ink:#e6ebf0; --muted:#98a4b1; --line:#2c3743; --soft:#141b22;
+  --accent:#e0566b; --accent-ink:#1a0c10;
+  --early:#6ea9ea; --late:#e8a23a; --good:#4fbf82; --lh:#a891f2; --rh:#e0566b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:640px;margin:0 auto;display:grid;gap:16px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:3px solid var(--accent);padding-bottom:10px}
+h1{font-family:var(--f-display);font-size:1.6rem;margin:0;letter-spacing:.02em;text-wrap:balance}
+.sub{color:var(--muted);font-size:.85rem;margin:2px 0 0}
+.chip{font-size:.8rem;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap}
+.chip.ok{color:var(--good);border-color:var(--good)}
+.chip.warn{color:var(--late);border-color:var(--late)}
+section{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:14px;min-width:0}
+h2{font-size:.78rem;letter-spacing:.12em;color:var(--muted);margin:0;font-weight:500}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label.f{display:grid;gap:6px;font-size:.85rem;color:var(--muted)}
+.stepper{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft)}
+.stepper button{border:0;background:transparent;color:var(--ink);font-size:1.2rem;width:44px;cursor:pointer}
+.stepper button:active{background:var(--line)}
+.stepper input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);text-align:center;font-family:var(--f-num);font-size:1.15rem;padding:8px 0}
+select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--soft);color:var(--muted);padding:10px 4px;font:inherit;font-size:.85rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toggle{display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--ink)}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:9px 14px;font:inherit;font-size:.88rem;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700;font-size:1.05rem;padding:14px;width:100%}
+.btn.primary.stop{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:.82rem;color:var(--muted);margin:0}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+/* live readout */
+.live{text-align:center;gap:10px}
+.beats{display:flex;justify-content:center;gap:10px}
+.beats span{width:14px;height:14px;border-radius:50%;background:var(--line);transition:background .05s}
+.beats span.on{background:var(--ink)}
+.beats span.on.first{background:var(--accent)}
+.big{font-family:var(--f-num);font-size:3.2rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.verdict{font-size:1.05rem;font-weight:700;min-height:1.5em}
+.e{color:var(--early)} .l{color:var(--late)} .g{color:var(--good)}
+.meter{position:relative;height:28px;border-radius:6px;background:var(--soft);border:1px solid var(--line);overflow:hidden}
+.meter .zone{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--good) 18%,transparent)}
+.meter .mid{position:absolute;top:0;bottom:0;left:50%;width:2px;background:var(--muted);transform:translateX(-1px)}
+.meter .needle{position:absolute;top:3px;bottom:3px;width:6px;border-radius:3px;background:var(--ink);left:50%;transform:translateX(-3px);transition:left .08s}
+.meterlbl{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)}
+.progress{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--accent)}
+.status{font-size:.9rem;color:var(--muted);min-height:1.4em}
+
+/* report */
+.badge{font-size:.72rem;padding:2px 8px;border-radius:4px;background:var(--soft);border:1px dashed var(--muted);color:var(--muted);margin-left:8px;letter-spacing:0}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{display:grid;gap:2px}
+.stat b{font-family:var(--f-num);font-size:1.4rem;font-variant-numeric:tabular-nums;font-weight:600}
+.stat small{color:var(--muted);font-size:.78rem}
+.canvasbox{position:relative;width:100%;min-width:0}
+canvas{display:block;width:100%}
+#chart{height:200px}
+.legend{display:flex;gap:14px;font-size:.8rem;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500;font-size:.78rem}
+.slots{display:grid;gap:8px}
+.slot{display:grid;grid-template-columns:58px 1fr 72px;align-items:center;gap:8px;font-size:.85rem}
+.slot .bar{position:relative;height:16px;background:var(--soft);border-radius:4px}
+.slot .bar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.slot .bar i{position:absolute;top:2px;bottom:2px;border-radius:3px}
+.slot .v{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.takeaway{background:var(--soft);border-radius:8px;padding:12px;font-size:.92rem;display:grid;gap:4px}
+.tap{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--muted);user-select:none;-webkit-user-select:none;touch-action:manipulation;cursor:pointer}
+.tap:active{background:var(--soft)}
+@media (max-width:420px){.big{font-size:2.6rem}.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.stat b{font-size:1.15rem}}
+@media (prefers-reduced-motion:reduce){.meter .needle,.beats span{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>哈農節拍檢查</h1>
+      <p class="sub">接上電鋼琴，跟著節拍器彈，看每個音是搶拍還是拖拍</p>
+    </div>
+    <span id="midiChip" class="chip">尚未連接 MIDI</span>
+  </header>
+
+  <section aria-labelledby="setH">
+    <h2 id="setH">練習設定</h2>
+    <div class="grid2">
+      <label class="f">速度（四分音符 BPM）
+        <div class="stepper">
+          <button type="button" data-step="-4" aria-label="減慢">−</button>
+          <input id="bpm" type="number" inputmode="numeric" min="30" max="200" value="60">
+          <button type="button" data-step="4" aria-label="加快">+</button>
+        </div>
+      </label>
+      <label class="f">長度（小節，4/4 拍）
+        <div class="stepper">
+          <button type="button" data-bars="-1" aria-label="減少小節">−</button>
+          <input id="bars" type="number" inputmode="numeric" min="1" max="64" value="8">
+          <button type="button" data-bars="1" aria-label="增加小節">+</button>
+        </div>
+      </label>
+    </div>
+    <div class="f" style="display:grid;gap:6px;font-size:.85rem;color:var(--muted)">
+      音符時值（每拍幾個音）
+      <div class="seg" id="subSeg" role="group" aria-label="音符時值">
+        <button type="button" data-sub="2" aria-pressed="false">八分音符 ×2</button>
+        <button type="button" data-sub="3" aria-pressed="false">三連音 ×3</button>
+        <button type="button" data-sub="4" aria-pressed="true">十六分 ×4</button>
+      </div>
+    </div>
+    <div class="grid2">
+      <label class="f">合格範圍
+        <select id="tol">
+          <option value="15">±15 ms（嚴格）</option>
+          <option value="25" selected>±25 ms（標準）</option>
+          <option value="40">±40 ms（寬鬆）</option>
+        </select>
+      </label>
+      <label class="f">延遲補償（ms）
+        <div class="stepper">
+          <button type="button" data-lat="-5" aria-label="減少補償">−</button>
+          <input id="lat" type="number" inputmode="numeric" value="0">
+          <button type="button" data-lat="5" aria-label="增加補償">+</button>
+        </div>
+      </label>
+    </div>
+    <div class="row" style="justify-content:space-between">
+      <label class="toggle"><input id="subClick" type="checkbox"> 節拍器也敲細分音</label>
+      <button type="button" class="btn" id="calBtn">校正延遲</button>
+    </div>
+    <p class="hint" id="calHint">第一次使用請先按「校正延遲」：跟著 8 下節拍器，每下彈一個音，手機的聲音延遲就會被扣掉。</p>
+  </section>
+
+  <section class="live" aria-live="polite">
+    <div class="beats" id="beats"><span></span><span></span><span></span><span></span></div>
+    <div class="big" id="bigNum">—</div>
+    <div class="verdict" id="verdict">&nbsp;</div>
+    <div>
+      <div class="meter" id="meter"><div class="zone" id="zone"></div><div class="mid"></div><div class="needle" id="needle"></div></div>
+      <div class="meterlbl"><span class="e">← 搶拍（早）</span><span class="l">拖拍（晚）→</span></div>
+    </div>
+    <div class="progress"><i id="prog"></i></div>
+    <div class="status" id="status">按開始後會先數一小節（4 下），再開始記錄。</div>
+    <button type="button" class="btn primary" id="startBtn">開始</button>
+    <div class="tap" id="tap" role="button" tabindex="0" hidden>沒有 MIDI 時，可以點這裡或按空白鍵代替彈奏</div>
+  </section>
+
+  <section aria-labelledby="repH">
+    <h2 id="repH">本次結果<span class="badge" id="sampleBadge">範例資料</span></h2>
+    <div class="takeaway" id="takeaway"></div>
+    <div class="stats">
+      <div class="stat"><small>整體傾向</small><b id="sMean">—</b></div>
+      <div class="stat"><small>穩定度（標準差）</small><b id="sSd">—</b></div>
+      <div class="stat"><small>合格比例</small><b id="sIn">—</b></div>
+    </div>
+    <div class="canvasbox"><canvas id="chart" aria-label="每個音的偏移量"></canvas></div>
+    <div class="legend"><span><i style="background:var(--lh)"></i>左手</span><span><i style="background:var(--rh)"></i>右手</span><span><i style="background:var(--muted)"></i>單音／點擊</span><span>綠色帶 = 合格範圍</span></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>手</th><th>音數</th><th>平均偏移</th><th>標準差</th><th>合格</th></tr></thead>
+        <tbody id="handRows"></tbody>
+      </table>
+    </div>
+    <h2>每拍內的位置</h2>
+    <div class="slots" id="slots"></div>
+    <p class="hint" id="syncLine"></p>
+    <p class="hint">正數代表比節拍器晚、負數代表早。左右手是用「同時彈下的兩個音，低的算左手、高的算右手」判斷，所以兩手要一起彈才分得開。</p>
+  </section>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const S = { bpm:60, bars:8, sub:4, tol:25, lat:0, subClick:false };
+  try{ const saved = JSON.parse(localStorage.getItem('hanon-timing')||'{}'); Object.assign(S, saved); }catch(e){}
+  function save(){ try{ localStorage.setItem('hanon-timing', JSON.stringify(S)); }catch(e){} }
+
+  // ---------- settings UI ----------
+  const bpmI=$('bpm'), barsI=$('bars'), latI=$('lat'), tolS=$('tol'), subC=$('subClick');
+  function syncUI(){
+    bpmI.value=S.bpm; barsI.value=S.bars; latI.value=S.lat; tolS.value=String(S.tol); subC.checked=S.subClick;
+    document.querySelectorAll('#subSeg button').forEach(b=>b.setAttribute('aria-pressed', String(+b.dataset.sub===S.sub)));
+    const pct = Math.min(50, S.tol / (60000/S.bpm/S.sub/2) * 50);
+    $('zone').style.left=(50-pct)+'%'; $('zone').style.width=(pct*2)+'%';
+  }
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{S.bpm=clamp(S.bpm+ +b.dataset.step,30,200);save();syncUI();});
+  document.querySelectorAll('[data-bars]').forEach(b=>b.onclick=()=>{S.bars=clamp(S.bars+ +b.dataset.bars,1,64);save();syncUI();});
+  document.querySelectorAll('[data-lat]').forEach(b=>b.onclick=()=>{S.lat=clamp(S.lat+ +b.dataset.lat,-300,500);save();syncUI();});
+  bpmI.onchange=()=>{S.bpm=clamp(+bpmI.value||60,30,200);save();syncUI();};
+  barsI.onchange=()=>{S.bars=clamp(+barsI.value||8,1,64);save();syncUI();};
+  latI.onchange=()=>{S.lat=clamp(Math.round(+latI.value||0),-300,500);save();syncUI();};
+  tolS.onchange=()=>{S.tol=+tolS.value;save();syncUI();render();};
+  subC.onchange=()=>{S.subClick=subC.checked;save();};
+  document.querySelectorAll('#subSeg button').forEach(b=>b.onclick=()=>{S.sub=+b.dataset.sub;save();syncUI();});
+  syncUI();
+
+  // ---------- MIDI ----------
+  const chip=$('midiChip');
+  let midiOK=false;
+  function setChip(text,cls){chip.textContent=text;chip.className='chip '+(cls||'');}
+  function bindInputs(access){
+    let names=[];
+    access.inputs.forEach(inp=>{ inp.onmidimessage=onMidi; names.push(inp.name||'MIDI 裝置'); });
+    midiOK = names.length>0;
+    if(midiOK) setChip('已連接：'+names[0],'ok'); else setChip('沒有偵測到琴，請檢查線材','warn');
+    $('tap').hidden = midiOK;
+  }
+  function initMIDI(){
+    if(!navigator.requestMIDIAccess){ setChip('此瀏覽器不支援 MIDI','warn'); $('tap').hidden=false; return; }
+    navigator.requestMIDIAccess({sysex:false}).then(access=>{
+      bindInputs(access);
+      access.onstatechange=()=>bindInputs(access);
+    }).catch(()=>{ setChip('無法讀取 MIDI（權限被拒）','warn'); $('tap').hidden=false; });
+  }
+  function onMidi(e){
+    const [st,note,vel]=e.data;
+    if((st&0xF0)===0x90 && vel>0) input(e.timeStamp||performance.now(), note);
+  }
+  initMIDI();
+  const tap=$('tap');
+  tap.addEventListener('pointerdown',e=>{e.preventDefault();input(e.timeStamp||performance.now(),null);});
+  document.addEventListener('keydown',e=>{ if(e.code==='Space' && run && !e.repeat){ e.preventDefault(); input(e.timeStamp||performance.now(),null);} });
+
+  // ---------- audio + session ----------
+  let ctx=null, run=null, timer=null, raf=null, wake=null;
+  function click(t, kind){
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.frequency.value = kind==='accent'?1760: kind==='beat'?1175: 784;
+    const peak = kind==='sub'?0.18:0.5;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+0.002); g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t+0.06);
+  }
+  async function start(mode){
+    if(run){ stop(true); return; }
+    if(!ctx){ const AC=window.AudioContext||window.webkitAudioContext; ctx=new AC({latencyHint:'interactive'}); }
+    try{ await ctx.resume(); }catch(e){}
+    try{ if(navigator.wakeLock) wake=await navigator.wakeLock.request('screen'); }catch(e){ wake=null; }
+    const calib = mode==='calib';
+    const bpm = calib?80:S.bpm, sub = calib?1:S.sub, beats = calib?8:S.bars*4;
+    const beatDur=60/bpm, step=beatDur/sub, count=4;
+    const T0 = ctx.currentTime + 0.2 + count*beatDur;
+    run = { calib, bpm, sub, step, beatDur, T0, total: beats*sub, end: T0+beats*beatDur,
+      next: -count*sub, notes:[], anchorA: ctx.currentTime, anchorP: performance.now(), lat: calib?0:S.lat };
+    if(!calib){ sampleMode=false; $('sampleBadge').hidden=true; notes=run.notes; curSub=sub; curStep=step; render(); }
+    $('startBtn').textContent='停止'; $('startBtn').classList.add('stop');
+    $('calBtn').disabled=true;
+    $('status').textContent = calib ? '校正中：聽到每一下就彈一個音（數 4 下後開始）' : '預備⋯數完 4 下就開始記錄';
+    $('bigNum').textContent='—'; $('verdict').innerHTML='&nbsp;';
+    timer=setInterval(schedule,25); schedule(); loop();
+  }
+  function schedule(){
+    const r=run; if(!r) return;
+    while(r.next < r.total && r.T0 + r.next*r.step < ctx.currentTime + 0.12){
+      const i=r.next, t=r.T0+i*r.step;
+      if(i % r.sub===0){ const beat=Math.round(i/r.sub); click(t, ((beat%4)+4)%4===0?'accent':'beat'); }
+      else if(!r.calib && S.subClick && i>=0) click(t,'sub');
+      r.next++;
+    }
+  }
+  function loop(){
+    const r=run; if(!r) return;
+    const now=ctx.currentTime;
+    const beatF=(now - r.T0)/r.beatDur;
+    const b=((Math.floor(beatF)%4)+4)%4;
+    document.querySelectorAll('#beats span').forEach((s,i)=>{ s.className = i===b ? ('on'+(i===0?' first':'')) : ''; });
+    $('prog').style.width = clamp((now-r.T0)/(r.end-r.T0),0,1)*100+'%';
+    if(now>=r.T0 && $('status').textContent.startsWith('預備')) $('status').textContent='記錄中⋯';
+    if(now > r.end + r.step){ stop(false); return; }
+    raf=requestAnimationFrame(loop);
+  }
+  function stop(aborted){
+    const r=run; run=null;
+    clearInterval(timer); cancelAnimationFrame(raf);
+    try{ wake&&wake.release(); }catch(e){} wake=null;
+    $('startBtn').textContent='開始'; $('startBtn').classList.remove('stop'); $('calBtn').disabled=false;
+    document.querySelectorAll('#beats span').forEach(s=>s.className='');
+    if(!r) return;
+    if(r.calib){
+      const offs=r.notes.map(n=>n.off).sort((a,b)=>a-b);
+      if(offs.length>=4){
+        const med=offs[Math.floor(offs.length/2)];
+        S.lat=Math.round(med); save(); syncUI();
+        $('status').textContent=`校正完成：延遲補償設為 ${S.lat} ms（收到 ${offs.length} 個音）。`;
+        $('calHint').textContent=`目前延遲補償 ${S.lat} ms。換手機、換耳機或改用藍牙喇叭時，請重新校正。`;
+      }else{
+        $('status').textContent='校正沒有完成：收到的音太少，請再試一次，每一下都彈一個音。';
+      }
+      return;
+    }
+    $('status').textContent = aborted ? `已停止，記錄了 ${r.notes.length} 個音。` : `完成！共記錄 ${r.notes.length} 個音。`;
+    render();
+  }
+  $('startBtn').onclick=()=>start('session');
+  $('calBtn').onclick=()=>start('calib');
+
+  function input(perfT, pitch){
+    const r=run; if(!r) return;
+    const t = r.anchorA + (perfT - r.anchorP)/1000;
+    const k = Math.round((t - r.T0)/r.step);
+    if(k<0 || k>=r.total) return;
+    const off = (t - (r.T0 + k*r.step))*1000 - r.lat;
+    r.notes.push({k, off, pitch, t});
+    showLive(off, r.step*1000/2);
+    if(!r.calib) render();
+  }
+  function word(off,tol){ return Math.abs(off)<=tol ? ['準','g'] : off<0 ? ['搶拍（早）','e'] : ['拖拍（晚）','l']; }
+  function fmt(v){ return (v>0?'+':v<0?'−':'')+Math.abs(Math.round(v)); }
+  function showLive(off, half){
+    const tol = run&&run.calib ? 1e9 : S.tol;
+    $('bigNum').textContent = fmt(off)+' ms';
+    const [w,c]=word(off,tol);
+    $('verdict').textContent = run&&run.calib ? '校正中' : w; $('verdict').className='verdict '+(run&&run.calib?'':c);
+    $('bigNum').className='big '+(run&&run.calib?'':c);
+    $('needle').style.left = (50 + clamp(off/half,-1,1)*50)+'%';
+  }
+
+  // ---------- analysis ----------
+  let notes=[], curSub=4, curStep=0.25, sampleMode=true;
+  function assignHands(list){
+    const groups=new Map();
+    list.forEach(n=>{ if(!groups.has(n.k)) groups.set(n.k,[]); groups.get(n.k).push(n); });
+    let lastL=null,lastR=null;
+    [...groups.keys()].sort((a,b)=>a-b).forEach(k=>{
+      const g=groups.get(k);
+      if(g.some(n=>n.pitch==null)){ g.forEach(n=>n.hand='S'); return; }
+      g.sort((a,b)=>a.pitch-b.pitch);
+      if(g.length>=2){
+        g.forEach((n,i)=>{ n.hand = i===0?'L': i===g.length-1?'R': (Math.abs(n.pitch-g[0].pitch)<Math.abs(n.pitch-g[g.length-1].pitch)?'L':'R'); });
+        lastL=g[0].pitch; lastR=g[g.length-1].pitch;
+      }else{
+        const n=g[0];
+        if(lastL!=null&&lastR!=null){ n.hand = Math.abs(n.pitch-lastL)<=Math.abs(n.pitch-lastR)?'L':'R'; if(n.hand==='L')lastL=n.pitch; else lastR=n.pitch; }
+        else n.hand='S';
+      }
+    });
+    return groups;
+  }
+  function summary(list,tol){
+    if(!list.length) return null;
+    const m=list.reduce((a,n)=>a+n.off,0)/list.length;
+    const sd=Math.sqrt(list.reduce((a,n)=>a+(n.off-m)**2,0)/list.length);
+    const inn=list.filter(n=>Math.abs(n.off)<=tol).length/list.length;
+    return {n:list.length,m,sd,inn};
+  }
+  const slotNames={2:['拍點','&'],3:['拍點','第 2','第 3'],4:['拍點 1','e','&','a']};
+
+  function render(){
+    const tol=S.tol;
+    const groups=assignHands(notes);
+    const all=summary(notes,tol);
+    $('sMean').textContent = all? fmt(all.m)+' ms':'—';
+    $('sMean').className = all? word(all.m,tol)[1]:'';
+    $('sSd').textContent = all? Math.round(all.sd)+' ms':'—';
+    $('sIn').textContent = all? Math.round(all.inn*100)+'%':'—';
+
+    const rows=[['左手','L'],['右手','R'],['單音／點擊','S']].map(([lab,h])=>{
+      const s=summary(notes.filter(n=>n.hand===h),tol); if(!s) return '';
+      const c=word(s.m,tol)[1];
+      return `<tr><td>${lab}</td><td class="num">${s.n}</td><td class="num ${c}">${fmt(s.m)} ms</td><td class="num">${Math.round(s.sd)} ms</td><td class="num">${Math.round(s.inn*100)}%</td></tr>`;
+    }).join('');
+    $('handRows').innerHTML = rows || '<tr><td colspan="5" style="text-align:left;color:var(--muted)">還沒有資料</td></tr>';
+
+    // slots
+    const names=slotNames[curSub]||[];
+    const half=curStep*1000/2;
+    let worst=null;
+    $('slots').innerHTML = names.map((nm,i)=>{
+      const s=summary(notes.filter(n=>((n.k%curSub)+curSub)%curSub===i),tol);
+      if(!s) return `<div class="slot"><span>${nm}</span><div class="bar"></div><span class="v">—</span></div>`;
+      if(!worst||Math.abs(s.m)>Math.abs(worst.m)) worst={m:s.m,nm};
+      const w=clamp(Math.abs(s.m)/half,0,1)*50, c=word(s.m,tol)[1];
+      const pos = s.m<0 ? `right:50%;width:${w}%` : `left:50%;width:${w}%`;
+      return `<div class="slot"><span>${nm}</span><div class="bar"><i style="${pos};background:var(--${c==='g'?'good':c==='e'?'early':'late'})"></i></div><span class="v ${c}">${fmt(s.m)} ms</span></div>`;
+    }).join('');
+
+    // hand sync
+    let diffs=[];
+    groups.forEach(g=>{ const L=g.find(n=>n.hand==='L'), R=g.find(n=>n.hand==='R'); if(L&&R) diffs.push((R.t-L.t)*1000); });
+    if(diffs.length>=4){
+      const d=diffs.reduce((a,b)=>a+b,0)/diffs.length;
+      $('syncLine').textContent = Math.abs(d)<8 ? `左右手對齊良好：平均相差 ${Math.abs(Math.round(d))} ms。` : `兩手同時彈的音，${d>0?'右手比左手晚':'左手比右手晚'}平均 ${Math.abs(Math.round(d))} ms。`;
+    } else $('syncLine').textContent='';
+
+    // takeaway
+    const tk=[];
+    if(all){
+      const [w,c]=word(all.m,tol);
+      tk.push(c==='g' ? `整體很準，平均只偏 ${fmt(all.m)} ms。` : `整體偏向<b class="${c}">${w}</b>，平均 ${fmt(all.m)} ms。`);
+      tk.push(all.sd<=tol*0.8 ? '每個音的間隔很平均。' : `音和音的間隔不太平均（標準差 ${Math.round(all.sd)} ms），先放慢速度練均勻。`);
+      if(worst && Math.abs(worst.m)>tol) tk.push(`每拍裡的「${worst.nm}」最不準（${fmt(worst.m)} ms），留意那個位置的手指。`);
+    }else tk.push('按「開始」彈一段，結果會出現在這裡。');
+    $('takeaway').innerHTML = (sampleMode?'<span style="color:var(--muted)">以下是範例：</span>':'') + tk.map(x=>`<div>${x}</div>`).join('');
+    drawChart(tol);
+  }
+
+  function drawChart(tol){
+    const cv=$('chart'), dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+    if(!W) return;
+    cv.width=W*dpr; cv.height=H*dpr;
+    const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+    const cs=getComputedStyle(document.documentElement), tok=n=>cs.getPropertyValue(n).trim();
+    const half=Math.max(tol*2, Math.min(curStep*1000/2, 120));
+    const padL=40,padR=8,padT=8,padB=18, pw=W-padL-padR, ph=H-padT-padB;
+    const y=v=>padT+ph/2 - clamp(v/half,-1,1)*ph/2;
+    g.clearRect(0,0,W,H);
+    g.fillStyle=tok('--good'); g.globalAlpha=.14; g.fillRect(padL,y(tol),pw,y(-tol)-y(tol)); g.globalAlpha=1;
+    g.font='11px '+tok('--f-num'); g.fillStyle=tok('--muted'); g.textAlign='right'; g.textBaseline='middle';
+    const tickV=Math.round(half/2);
+    [-tickV*2,-tickV,0,tickV,tickV*2].forEach(v=>{
+      if(Math.abs(v)>half) return;
+      g.strokeStyle=tok('--line'); g.lineWidth=v===0?1.5:1; g.beginPath(); g.moveTo(padL,y(v)); g.lineTo(W-padR,y(v)); g.stroke();
+      g.fillText((v>0?'+':'')+v,padL-6,y(v));
+    });
+    g.textAlign='left'; g.textBaseline='bottom';
+    g.fillText('晚',2,padT+12); g.textBaseline='top'; g.fillText('早',2,H-padB-12);
+    if(!notes.length) return;
+    const maxK=Math.max(...notes.map(n=>n.k),1);
+    const col={L:tok('--lh'),R:tok('--rh'),S:tok('--muted')};
+    notes.forEach(n=>{
+      const x=padL+ (n.k/maxK)*pw;
+      g.fillStyle=col[n.hand]||col.S;
+      g.beginPath(); g.arc(clamp(x,padL+3,W-padR-3), y(n.off), 3, 0, Math.PI*2); g.fill();
+    });
+    g.fillStyle=tok('--muted'); g.textAlign='center'; g.textBaseline='top';
+    const beatsTotal=Math.ceil(maxK/curSub);
+    g.fillText('第 1 拍',padL+20,H-padB+4); g.fillText(`第 ${beatsTotal} 拍`,W-padR-24,H-padB+4);
+  }
+  window.addEventListener('resize',()=>drawChart(S.tol));
+  if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>drawChart(S.tol));
+  new MutationObserver(()=>drawChart(S.tol)).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+  // ---------- sample session (shown until a real one runs) ----------
+  (function sample(){
+    let seed=7; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+    const gauss=()=>{let s=0;for(let i=0;i<6;i++)s+=rnd();return (s-3);};
+    const step=0.25, out=[];
+    for(let k=0;k<64;k++){
+      const slot=k%4;
+      const base = slot===2? 22 : slot===0? -4 : 6;
+      const lt=k*step+(base+gauss()*9)/1000, rt=k*step+(base-10+gauss()*8)/1000;
+      out.push({k,off:(lt-k*step)*1000,pitch:48+(k%8),t:lt});
+      out.push({k,off:(rt-k*step)*1000,pitch:60+(k%8),t:rt});
+    }
+    notes=out; curSub=4; curStep=step;
+  })();
+  render();
+})();
+</script>
+</body>
+</html>
