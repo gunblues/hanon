@@ -3,7 +3,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&display=swap">
 <style>
-/* Layout: practice-stand column — choose exercise, a scrolling piano roll while playing, then a graded report with per-finger detail. */
+@font-face{font-family:"HanonClefs";src:url(data:font/woff;base64,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) format("woff");font-display:block}
+/* Layout: practice-stand column — choose exercise, scrolling staff notation while playing, then a graded report with per-finger detail. */
 :root{
   --bg:#eef1f4; --surface:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#d6dde4; --soft:#f5f7f9;
   --accent:#a3263a; --accent-ink:#ffffff;
@@ -61,7 +62,7 @@ details[open] summary{margin-bottom:12px}
 
 .rollbox{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft)}
 canvas{display:block;width:100%}
-#roll{height:250px}
+#roll{height:214px}
 .readout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;text-align:center}
 .readout div{display:grid;gap:0}
 .readout b{font-family:var(--f-num);font-size:1.35rem;font-variant-numeric:tabular-nums;font-weight:600;line-height:1.2}
@@ -170,11 +171,11 @@ th{color:var(--muted);font-weight:500;font-size:.76rem}
 
   <section aria-labelledby="playH">
     <h2 id="playH">彈奏</h2>
-    <div class="rollbox"><canvas id="roll" aria-label="鋼琴捲簾：上方右手、下方左手"></canvas></div>
+    <div class="rollbox"><canvas id="roll" aria-label="五線譜：上方右手、下方左手"></canvas></div>
     <div class="legend">
-      <span><i style="background:var(--rh);opacity:.35"></i>待彈（數字是指法）</span>
-      <span><i style="background:var(--good)"></i>準</span><span><i style="background:var(--early)"></i>搶拍</span><span><i style="background:var(--late)"></i>拖拍</span>
-      <span><i style="border:2px solid var(--bad);background:transparent"></i>漏彈</span><span><i style="background:var(--bad);border-radius:50%;width:8px"></i>錯音／多彈</span>
+      <span><i style="background:var(--ink);border-radius:50%;width:9px"></i>待彈（上下的數字是指法）</span>
+      <span><i style="background:var(--good);border-radius:50%;width:9px"></i>準</span><span><i style="background:var(--early);border-radius:50%;width:9px"></i>搶拍</span><span><i style="background:var(--late);border-radius:50%;width:9px"></i>拖拍</span>
+      <span><i style="border:2px solid var(--bad);background:transparent;border-radius:50%;width:10px;height:10px"></i>漏彈</span><span style="color:var(--bad);font-weight:700">✕ <span style="color:var(--muted);font-weight:400">錯音／多彈</span></span>
     </div>
     <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="回放位置" hidden>
     <div class="readout" aria-live="polite">
@@ -441,7 +442,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     lastSession=r;
     const rep=analyze(r);
     if(rep.n<8){ $('status').textContent='彈的音太少，沒有評分。'; renderReport(rep,false); return; }
-    $('status').textContent = aborted ? '已停止，以下是到停止為止的評分。' : '完成！往下看評分，或拖動捲簾下方的滑桿回看。';
+    $('status').textContent = aborted ? '已停止，以下是到停止為止的評分。' : '完成！往下看評分，或拖動樂譜下方的滑桿回看。';
     lastSession=r;
     pushHistory(r,rep);
     renderReport(rep,false);
@@ -578,63 +579,180 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
       return `<tr><td>${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</td><td class="num">${x.bpm}</td><td>${rangeName(x.range)}・${handsName(x.hands)}</td><td class="num ${x.total===best?'best':''}">${x.total}</td>${x.p.map(v=>`<td class="num">${v==null?'—':v}</td>`).join('')}</tr>`; }).join('');
   }
 
-  // ---------- piano roll ----------
+  // ---------- staff notation ----------
   const cvs=$('roll');
   function tok(){ const cs=getComputedStyle(document.documentElement); const o={}; ['--ink','--muted','--line','--soft','--surface','--accent','--early','--late','--good','--bad','--rh','--lh','--f-num'].forEach(k=>o[k]=cs.getPropertyValue(k).trim()); return o; }
+  let clefFont=false;
+  try{ document.fonts.load('40px HanonClefs','\u{1D11E}\u{1D122}').then(f=>{ clefFont=f.length>0; redraw(); }).catch(()=>{}); }catch(e){}
+  const BOT={G:37,F:25};               // diatonic index of each clef's bottom line: E4 / G2
+  const ledgers=s=>s<-1?Math.floor(-s/2):s>9?Math.floor((s-8)/2):0;
+  function layoutFor(sess){
+    if(sess._lay) return sess._lay;
+    const M=sess.m16||8, lo=sess.lo||0, lay={};
+    ['R','L'].forEach(h=>{
+      const ns=sess.targets.filter(n=>n.h===h); if(!ns.length) return;
+      const meas=new Map();
+      ns.forEach(n=>{ const m=Math.floor((n.t16+lo+1e-6)/M); if(!meas.has(m)) meas.set(m,[]); meas.get(m).push(n); });
+      const clefs=new Map(); let prev=null;
+      [...meas.keys()].sort((a,b)=>a-b).forEach(m=>{
+        const arr=meas.get(m), cost=c=>arr.reduce((s,n)=>s+ledgers(Math.floor(dia(n.p))-BOT[c]),0);
+        const home=h==='R'?'G':'F', pen=c=>(c!==home?4:0)+(prev!=null&&c!==prev?2:0);
+        const cg=cost('G')+pen('G'), cf=cost('F')+pen('F');
+        const c = cg<cf?'G':cf<cg?'F':(prev||home);
+        clefs.set(m,c); prev=c;
+      });
+      ns.forEach(n=>{ const m=Math.floor((n.t16+lo+1e-6)/M); n.clef=clefs.get(m); const d=dia(n.p); n.s=Math.floor(d)-BOT[n.clef]; n.acc=d%1!==0; });
+      const byT=new Map(); ns.forEach(n=>{ const k=n.t16.toFixed(3); if(!byT.has(k)) byT.set(k,[]); byT.get(k).push(n); });
+      const items=[...byT.values()].map(a=>({t16:a[0].t16,t:a[0].t,d16:Math.min(...a.map(n=>n.d16)),notes:a.sort((x,y)=>x.s-y.s),clef:a[0].clef})).sort((a,b)=>a.t16-b.t16);
+      const groups=[]; let cur=null;
+      items.forEach(it=>{
+        const beat=Math.floor((it.t16+lo+1e-6)/4);
+        if(it.d16<4 && cur && cur.beat===beat && cur.clef===it.clef) cur.items.push(it);
+        else { cur={beat,clef:it.clef,items:[it]}; groups.push(cur); }
+        if(it.d16>=4) cur=null;
+      });
+      groups.forEach(gp=>{
+        const all=gp.items.flatMap(i=>i.notes.map(n=>n.s));
+        gp.up = all.reduce((a,b)=>a+b,0)/all.length < 4;
+        gp.beams = gp.items.length>=2 ? (gp.items.every(i=>i.d16<=1.01)?2:1) : 0;
+      });
+      lay[h]={items,groups,clefs,M,lo};
+    });
+    sess._lay=lay; return lay;
+  }
+  function clefAt(L,t16){ const m=Math.floor((t16+L.lo+1e-6)/L.M); if(L.clefs.has(m)) return L.clefs.get(m);
+    let best=null,bd=1e9; L.clefs.forEach((c,k)=>{ const d=Math.abs(k-m); if(d<bd||(d===bd&&k<m)){bd=d;best=c;} }); return best||'G'; }
+  function drawClef(g,C,c,x,yTop,sp){
+    if(clefFont){
+      g.font='40px HanonClefs'; const ch=c==='G'?'\u{1D11E}':'\u{1D122}'; const m=g.measureText(ch);
+      const a=m.actualBoundingBoxAscent, d=m.actualBoundingBoxDescent; const want = c==='G'? [yTop-1.7*sp, yTop+5.6*sp] : [yTop-0.05*sp, yTop+3.1*sp];
+      const sc=(want[1]-want[0])/(a+d||1);
+      g.save(); g.translate(x, want[0]+a*sc); g.scale(sc,sc); g.fillStyle=C['--ink']; g.textAlign='left'; g.textBaseline='alphabetic'; g.fillText(ch,0,0); g.restore();
+    } else {
+      g.fillStyle=C['--ink']; g.font=`700 ${Math.round(sp*2.6)}px serif`; g.textAlign='left'; g.textBaseline='middle';
+      g.fillText(c, x+2, c==='G'? yTop+3*sp : yTop+sp);
+    }
+  }
+  function stateColor(C,sess,n,cur,done){
+    if(n.hit>=0){ const c=cls((sess.played[n.hit].x-n.t)*1000); return {col:C[c==='g'?'--good':c==='e'?'--early':'--late'],miss:false}; }
+    if((done && sess.played.length) || (cur-n.t>sess.win)) return {col:C['--bad'],miss:true};
+    return {col:C['--ink'],miss:false,pending:true};
+  }
   function drawRoll(sess,cur){
     if(!sess) return;
     const dpr=window.devicePixelRatio||1, W=cvs.clientWidth, H=cvs.clientHeight; if(!W) return;
     if(cvs.width!==Math.round(W*dpr)||cvs.height!==Math.round(H*dpr)){ cvs.width=Math.round(W*dpr); cvs.height=Math.round(H*dpr); }
     const g=cvs.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
-    const C=tok(), s16=sess.s16;
-    const px = (W*0.72)/(16*s16), headX=W*0.22;
-    const X = t => headX + (t-cur)*px;
-    const hands = sess.calib?['R']:['R','L'].filter(h=>sess.targets.some(n=>n.h===h));
-    const top=16, laneGap=8, laneH=(H-top-6-laneGap*(hands.length-1))/hands.length;
-    const lanes={};
-    hands.forEach((h,k)=>{
-      const ps=sess.targets.filter(n=>n.h===h).map(n=>dia(n.p));
-      const lo=sess.calib?0:Math.min(...ps)-1, hi=sess.calib?2:Math.max(...ps)+1;
-      lanes[h]={y0:top+k*(laneH+laneGap), lo, hi};
-    });
-    const Y=(h,p)=>{ const L=lanes[h]; const d=sess.calib?1:dia(p); return L.y0 + laneH - ((d-L.lo)/(L.hi-L.lo))*laneH; };
-    // lanes bg + labels
-    g.font='11px '+C['--f-num'];
-    hands.forEach(h=>{ const L=lanes[h]; g.fillStyle=C['--surface']; g.fillRect(0,L.y0,W,laneH);
-      g.fillStyle=C['--muted']; g.textBaseline='top'; g.textAlign='left'; g.fillText(sess.calib?'校正':HN[h],6,L.y0+4); });
-    // measure lines (2/4 => 8 sixteenths)
-    const t0=cur-headX/px, t1=cur+(W-headX)/px;
-    const M=(sess.m16||8), off16=(sess.lo||0)%M, base=Math.floor((sess.lo||0)/M);
-    const mt=k=>(k*M-off16)*s16;
-    const m0=Math.floor((t0/s16+off16)/M), m1=Math.ceil((t1/s16+off16)/M);
-    g.textAlign='center'; g.textBaseline='top';
-    for(let m=Math.max(0,m0);m<=m1;m++){ const x=X(mt(m)); if(mt(m)<-1e-6) continue; g.strokeStyle=C['--line']; g.lineWidth=1; g.beginPath(); g.moveTo(x,top-2); g.lineTo(x,H); g.stroke();
-      if(!sess.calib){ g.fillStyle=C['--muted']; g.fillText(String(base+m+1),x+10,2); } }
-    // targets
+    const C=tok(), s16=sess.s16, sp=7, hs=sp/2;
+    const vis = W<520?16:24, px=(W*0.78)/vis/s16, headX=Math.max(64,W*0.2);
+    const X=t=>headX+(t-cur)*px;
+    const rx=sp*0.62, ry=sp*0.44;
+    const head=(x,y,col,hollow,thick)=>{ g.save(); g.translate(x,y); g.rotate(-0.35); g.beginPath(); g.ellipse(0,0,rx,ry,0,0,Math.PI*2);
+      if(hollow){ g.strokeStyle=col; g.lineWidth=thick||1.4; g.stroke(); } else { g.fillStyle=col; g.fill(); } g.restore(); };
+    const line=(x1,y1,x2,y2,col,w)=>{ g.strokeStyle=col; g.lineWidth=w; g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke(); };
+    g.fillStyle=C['--surface']; g.fillRect(0,0,W,H);
     const done = !run || run!==sess;
-    for(const n of sess.targets){
-      const x=X(n.t), w=Math.max(3,n.dur*px-3);
-      if(x+w<0||x>W) continue;
-      const y=Y(n.h,n.p), bh=12;
-      let fill=null, stroke=null, alpha=1;
-      if(n.hit>=0){ const off=(sess.played[n.hit].x-n.t)*1000; const c=cls(off); fill=C[c==='g'?'--good':c==='e'?'--early':'--late']; }
-      else if((done && sess.played.length) || (cur-n.t>sess.win)){ stroke=C['--bad']; }
-      else { fill=C[n.h==='R'?'--rh':'--lh']; alpha=0.3; }
-      g.globalAlpha=alpha;
-      if(fill){ g.fillStyle=fill; roundRect(g,x,y-bh/2,w,bh,3); g.fill(); }
-      g.globalAlpha=1;
-      if(stroke){ g.strokeStyle=stroke; g.lineWidth=2; roundRect(g,x+1,y-bh/2+1,w-2,bh-2,3); g.stroke(); }
-      if(n.f && w>=11){ g.fillStyle=n.hit>=0?C['--surface']:C['--ink']; g.font='600 10px '+C['--f-num']; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(n.f),x+Math.min(w,14)/2,y+0.5); }
+
+    if(sess.calib){
+      const y=H/2;
+      line(0,y,W,y,C['--muted'],1);
+      for(const n of sess.targets){ const x=X(n.t); if(x<-10||x>W+10) continue; const st=stateColor(C,sess,n,cur,done);
+        head(x,y,st.col,st.miss); line(x+rx-0.6,y,x+rx-0.6,y-3.5*sp,C['--ink'],1.2); }
+      line(headX,8,headX,H-8,C['--accent'],2);
+      g.fillStyle=C['--muted']; g.font='11px '+C['--f-num']; g.textAlign='left'; g.textBaseline='top'; g.fillText('校正：每一下彈一個音',8,6);
+      return;
     }
-    // extra / wrong played
-    if(!sess.calib) for(const q of sess.played){ if(q.tgt>=0) continue; const x=X(q.x); if(x<0||x>W) continue;
-      let h=hands[0]; if(hands.length>1){ const dR=Math.abs(dia(q.p)-(lanes.R.lo+lanes.R.hi)/2), dL=Math.abs(dia(q.p)-(lanes.L.lo+lanes.L.hi)/2); h=dR<=dL?'R':'L'; }
-      const L=lanes[h]; const y=clamp(Y(h,q.p),L.y0+5,L.y0+laneH-5);
-      g.fillStyle=C['--bad']; g.beginPath(); g.arc(x,y,4,0,Math.PI*2); g.fill(); }
+    const lay=layoutFor(sess), hands=['R','L'].filter(h=>lay[h]);
+    const block=22*hs+14, top=13, gap=4;
+    const used=top+hands.length*block+(hands.length-1)*gap, off=Math.max(0,(H-used)/2);
+    const geo={};
+    hands.forEach((h,k)=>{
+      const y0=off+top+k*(block+gap);
+      const fingerY = h==='R'? y0+7 : y0+block-7;
+      const staffTop = h==='R'? y0+14+7*hs : y0+7*hs;
+      geo[h]={y0,fingerY,staffTop,base:staffTop+8*hs};
+    });
+    const Y=(h,s)=>geo[h].base - s*hs;
+    // staff lines
+    hands.forEach(h=>{ for(let k=0;k<5;k++){ const y=geo[h].staffTop+k*sp; line(0,y,W,y,C['--muted'],1); } });
+    const sysTop=geo[hands[0]].staffTop, sysBot=geo[hands[hands.length-1]].staffTop+4*sp;
+    // barlines + measure numbers + clef changes
+    const M=sess.m16||8, lo=sess.lo||0, off16=lo%M, baseM=Math.floor(lo/M);
+    const t0=cur-headX/px, t1=cur+(W-headX)/px;
+    const m0=Math.floor((t0/s16+off16)/M), m1=Math.ceil((t1/s16+off16)/M);
+    g.font='10px '+C['--f-num']; g.textAlign='left'; g.textBaseline='bottom';
+    for(let m=Math.max(0,m0); m<=m1; m++){
+      const t16=m*M-off16; if(t16<-1e-6) continue;
+      const x=X(t16*s16)-sp*1.1;
+      line(x,sysTop,x,sysBot,C['--muted'],1);
+      g.fillStyle=C['--muted']; g.fillText(String(baseM+m+1),x+2,geo[hands[0]].y0-1);
+      hands.forEach(h=>{ const L=lay[h]; const a=clefAt(L,t16-0.5), b=clefAt(L,t16+0.01); if(t16>0 && a!==b){ g.save(); g.globalAlpha=.9; drawClef(g,C,b,x-sp*2.6,geo[h].staffTop,sp*0.62); g.restore(); } });
+    }
+    // notes
+    hands.forEach(h=>{
+      const L=lay[h], G=geo[h];
+      for(const gp of L.groups){
+        const its=gp.items, xs=its.map(i=>X(i.t));
+        if(xs[xs.length-1]<-20 || xs[0]>W+20) continue;
+        const up=gp.up, sx=i=>X(i.t)+(up?rx-0.6:-rx+0.6);
+        const tipS=i=> up? i.notes[i.notes.length-1].s : i.notes[0].s;
+        const rootS=i=> up? i.notes[0].s : i.notes[i.notes.length-1].s;
+        let beamY=null;
+        if(gp.beams && its.length>=2){
+          const a=its[0], b=its[its.length-1], xa=sx(a), xb=sx(b);
+          let ya=Y(h,tipS(a))+(up?-3.5:3.5)*sp, yb=Y(h,tipS(b))+(up?-3.5:3.5)*sp;
+          let slope=clamp((yb-ya)/((xb-xa)||1),-0.22,0.22);
+          let shift=0;
+          its.forEach(i=>{ const need=Y(h,tipS(i))+(up?-2.8:2.8)*sp, at=ya+slope*(sx(i)-xa); if(up && at>need) shift=Math.min(shift,need-at); if(!up && at<need) shift=Math.max(shift,need-at); });
+          beamY=x=>ya+shift+slope*(x-xa);
+          const bw=sp*0.48;
+          for(let k=0;k<gp.beams;k++){
+            const d=(up?1:-1)*k*sp*0.75;
+            g.fillStyle=C['--ink']; g.beginPath();
+            g.moveTo(xa,beamY(xa)+d); g.lineTo(xb,beamY(xb)+d); g.lineTo(xb,beamY(xb)+d+(up?bw:-bw)); g.lineTo(xa,beamY(xa)+d+(up?bw:-bw)); g.closePath(); g.fill();
+          }
+        }
+        its.forEach(i=>{
+          const cx=X(i.t); if(cx<-20||cx>W+20) return;
+          // ledger lines
+          i.notes.forEach(n=>{ if(n.s<=-2) for(let k=-2;k>=n.s;k-=2) line(cx-rx*1.5,Y(h,k),cx+rx*1.5,Y(h,k),C['--muted'],1);
+                                if(n.s>=10) for(let k=10;k<=n.s;k+=2) line(cx-rx*1.5,Y(h,k),cx+rx*1.5,Y(h,k),C['--muted'],1); });
+          // stem
+          if(i.d16<16){ const x=sx(i), y1=Y(h,rootS(i)), y2= beamY? beamY(x) : Y(h,tipS(i))+(up?-3.5:3.5)*sp;
+            line(x,y1,x,y2,C['--ink'],1.2);
+            if(!beamY && i.d16<4){ const nf=i.d16<=1.01?2:1; for(let k=0;k<nf;k++){ const yy=y2+(up?1:-1)*k*sp*0.8;
+              g.strokeStyle=C['--ink']; g.lineWidth=1.6; g.beginPath(); g.moveTo(x,yy); g.quadraticCurveTo(x+sp*1.1,yy+(up?1:-1)*sp*0.9,x+sp*0.9,yy+(up?1:-1)*sp*2); g.stroke(); } } }
+          // heads, accidentals, fingering
+          i.notes.forEach(n=>{
+            const st=stateColor(C,sess,n,cur,done), y=Y(h,n.s);
+            head(cx,y,st.col, st.miss || i.d16>=8, st.miss?1.8:1.4);
+            if(st.miss){ g.strokeStyle=C['--bad']; g.lineWidth=1.2; g.beginPath(); g.arc(cx,y,rx*1.7,0,Math.PI*2); g.stroke(); }
+            if(n.acc){ g.fillStyle=st.col; g.font=`${Math.round(sp*2.2)}px HanonClefs, serif`; g.textAlign='right'; g.textBaseline='middle'; g.fillText('♯',cx-rx-1.5,y); }
+            if(n.f){ g.fillStyle=st.pending?C['--ink']:st.col; g.globalAlpha=st.pending?0.75:1; g.font='600 10px '+C['--f-num']; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(n.f),cx,G.fingerY); g.globalAlpha=1; }
+          });
+        });
+      }
+    });
+    // wrong / extra notes played
+    for(const q of sess.played){ if(q.tgt>=0) continue; const x=X(q.x); if(x<-10||x>W+10) continue;
+      let h=hands[0];
+      if(hands.length>1){ const avg=hh=>{ const a=sess.targets.filter(n=>n.h===hh); return a.reduce((s,n)=>s+n.p,0)/a.length; }; h=Math.abs(q.p-avg('R'))<=Math.abs(q.p-avg('L'))?'R':'L'; }
+      const c=clefAt(lay[h], q.x/s16), s=clamp(Math.floor(dia(q.p))-BOT[c],-7,15), y=Y(h,s), r=sp*0.55;
+      line(x-r,y-r,x+r,y+r,C['--bad'],2); line(x-r,y+r,x+r,y-r,C['--bad'],2);
+    }
+    // sticky clefs at the left edge
+    hands.forEach(h=>{ const G=geo[h];
+      g.fillStyle=C['--surface']; g.fillRect(0,G.y0-(h===hands[0]?13:0),sp*4.4,block+(h===hands[0]?13:0)+gap);
+      for(let k=0;k<5;k++){ const y=G.staffTop+k*sp; line(0,y,sp*4.4,y,C['--muted'],1); }
+      drawClef(g,C,clefAt(lay[h],Math.max(0,(cur-(headX-sp*4.4)/px)/s16)),sp*0.5,G.staffTop,sp);
+      g.fillStyle=C['--muted']; g.font='10px '+C['--f-num']; g.textAlign='left'; g.textBaseline='middle';
+      g.fillText(HN[h], 2, G.fingerY);
+    });
+    if(hands.length>1) line(0.5,sysTop,0.5,sysBot,C['--ink'],1.5);
     // playhead
-    g.strokeStyle=C['--accent']; g.lineWidth=2; g.beginPath(); g.moveTo(headX,top-4); g.lineTo(headX,H); g.stroke();
+    line(headX,sysTop-2.5*sp,headX,sysBot+2.5*sp,C['--accent'],2);
   }
-  function roundRect(g,x,y,w,h,r){ r=Math.min(r,w/2,h/2); g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+  function redraw(){ if(!run&&viewSession) drawRoll(viewSession, scrubMode?(+$('scrub').value/1000)*viewSession.endSec:-0.5); }
   function enableScrub(sess){
     scrubMode=true; viewSession=sess; const sc=$('scrub'); sc.hidden=false;
     let firstBad = sess.targets.find(n=>n.hit<0 && n.t<= (sess.cut??Infinity));
@@ -642,8 +760,8 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     drawRoll(sess, (+sc.value/1000)*sess.endSec);
   }
   $('scrub').oninput=()=>{ if(viewSession && scrubMode) drawRoll(viewSession,(+$('scrub').value/1000)*viewSession.endSec); };
-  window.addEventListener('resize',()=>{ if(!run&&viewSession) drawRoll(viewSession, scrubMode?(+$('scrub').value/1000)*viewSession.endSec:-0.5); });
-  new MutationObserver(()=>{ if(!run&&viewSession) drawRoll(viewSession, scrubMode?(+$('scrub').value/1000)*viewSession.endSec:-0.5); }).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  window.addEventListener('resize',redraw);
+  new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
   // ---------- MIDI file import ----------
   function parseSMF(buf){
@@ -744,7 +862,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   lastSession=null;
   renderReport(analyze(sampleSess),true);
   viewSession=sampleSess; enableScrub(sampleSess);
-  $('status').textContent='上方捲簾是範例的回放。接上琴後按開始，會先數 4 下再開始。';
+  $('status').textContent='上方樂譜是範例的回放，可以拖動滑桿看。接上琴後按開始，會先數 4 下再開始。';
 })();
 </script>
 </body></html>
