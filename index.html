@@ -125,10 +125,21 @@ th{color:var(--muted);font-weight:500;font-size:.76rem}
         <div class="seg" id="rangeSeg" role="group" aria-label="範圍">
           <button type="button" data-v="all">全曲</button><button type="button" data-v="up">上行</button><button type="button" data-v="down">下行</button><button type="button" data-v="bar">小節</button>
         </div>
-        <div class="stepper" id="barBox" hidden>
-          <button type="button" data-bar="-1" aria-label="上一小節">−</button>
-          <input id="barNo" type="number" inputmode="numeric" min="1" value="1" aria-label="第幾小節">
-          <button type="button" data-bar="1" aria-label="下一小節">+</button>
+        <div class="grid2" id="barBox" hidden>
+          <label class="f">從第幾小節
+            <div class="stepper">
+              <button type="button" data-bar="-1" aria-label="起點往前">−</button>
+              <input id="barNo" type="number" inputmode="numeric" min="1" value="1">
+              <button type="button" data-bar="1" aria-label="起點往後">+</button>
+            </div>
+          </label>
+          <label class="f">到第幾小節
+            <div class="stepper">
+              <button type="button" data-bar2="-1" aria-label="終點往前">−</button>
+              <input id="barNo2" type="number" inputmode="numeric" min="1" value="1">
+              <button type="button" data-bar2="1" aria-label="終點往後">+</button>
+            </div>
+          </label>
         </div>
       </div>
       <div class="f">手
@@ -235,7 +246,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function loadJSON(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?def:v; }catch(e){ return def; } }
   function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } }
-  const S = Object.assign({ex:'1',range:'all',hands:'both',bpm:60,tol:25,lat:0,sound:'wood',subClick:false,bar:1}, loadJSON('hanon2-settings',{}));
+  const S = Object.assign({ex:'1',range:'all',hands:'both',bpm:60,tol:25,lat:0,sound:'wood',subClick:false,bar:1,bar2:1}, loadJSON('hanon2-settings',{}));
   const old = loadJSON('hanon-timing',null); if(old && !loadJSON('hanon2-settings',null) && typeof old.lat==='number') S.lat=old.lat;
   const save=()=>saveJSON('hanon2-settings',S);
   let imports = loadJSON('hanon2-imports',[]);
@@ -267,8 +278,8 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     bpmI.value=S.bpm; latI.value=S.lat; $('tol').value=String(S.tol); $('sound').value=S.sound; $('subClick').checked=S.subClick;
     if(ex.split==null && (S.range==='up'||S.range==='down')) S.range='all';
     document.querySelectorAll('#rangeSeg button').forEach(b=>{ b.setAttribute('aria-pressed',String(b.dataset.v===S.range)); b.disabled = (b.dataset.v==='up'||b.dataset.v==='down') && ex.split==null; });
-    const nBars=Math.ceil(ex.len/(ex.m16||8)); S.bar=clamp(S.bar||1,1,nBars);
-    $('barBox').hidden = S.range!=='bar'; $('barNo').value=S.bar; $('barNo').max=nBars;
+    const nBars=Math.ceil(ex.len/(ex.m16||8)); S.bar=clamp(S.bar||1,1,nBars); S.bar2=clamp(S.bar2||S.bar,1,nBars);
+    $('barBox').hidden = S.range!=='bar'; $('barNo').value=S.bar; $('barNo2').value=S.bar2; $('barNo').max=nBars; $('barNo2').max=nBars;
     document.querySelectorAll('#handSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===S.hands)));
     $('delImp').hidden = !!ex.builtin;
   }
@@ -277,8 +288,14 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   document.querySelectorAll('#handSeg button').forEach(b=>b.onclick=()=>{S.hands=b.dataset.v;save();syncUI();prepare();});
   document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{S.bpm=clamp(S.bpm+ +b.dataset.step,30,160);save();syncUI();prepare();});
   document.querySelectorAll('[data-lat]').forEach(b=>b.onclick=()=>{S.lat=clamp(S.lat+ +b.dataset.lat,-300,500);save();syncUI();});
-  document.querySelectorAll('[data-bar]').forEach(b=>b.onclick=()=>{S.bar=(S.bar||1)+ +b.dataset.bar;save();syncUI();prepare();});
-  $('barNo').onchange=()=>{S.bar=Math.round(+$('barNo').value||1);save();syncUI();prepare();};
+  function setBars(a,b,moved){ const n=Math.ceil(getEx(S.ex).len/(getEx(S.ex).m16||8));
+    a=clamp(Math.round(a)||1,1,n); b=clamp(Math.round(b)||1,1,n);
+    if(a>b){ if(moved==='start') b=a; else a=b; }
+    S.bar=a; S.bar2=b; save(); syncUI(); prepare(); }
+  document.querySelectorAll('[data-bar]').forEach(b=>b.onclick=()=>setBars((S.bar||1)+ +b.dataset.bar, S.bar2, 'start'));
+  document.querySelectorAll('[data-bar2]').forEach(b=>b.onclick=()=>setBars(S.bar, (S.bar2||1)+ +b.dataset.bar2, 'end'));
+  $('barNo').onchange=()=>setBars(+$('barNo').value, S.bar2, 'start');
+  $('barNo2').onchange=()=>setBars(S.bar, +$('barNo2').value, 'end');
   bpmI.onchange=()=>{S.bpm=clamp(Math.round(+bpmI.value||60),30,160);save();syncUI();prepare();};
   latI.onchange=()=>{S.lat=clamp(Math.round(+latI.value||0),-300,500);save();syncUI();};
   $('tol').onchange=()=>{S.tol=+$('tol').value;save(); if(lastSession) renderReport(analyze(lastSession),false); else if(sampleSess) renderReport(analyze(sampleSess),true); };
@@ -329,7 +346,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     let lo=0, hi=Infinity;
     if(range==='up'&&ex.split!=null) hi=ex.split;
     if(range==='down'&&ex.split!=null) lo=ex.split;
-    if(range==='bar'){ const M=ex.m16||8; lo=((S.bar||1)-1)*M; hi=lo+M; }
+    if(range==='bar'){ const M=ex.m16||8; lo=((S.bar||1)-1)*M; hi=(Math.max(S.bar||1,S.bar2||1))*M; }
     const out=[];
     ['R','L'].forEach(h=>{ if(hands!=='both'&&hands!==h) return;
       ex[h].forEach(([t,p,d,f])=>{ if(t>=lo&&t<hi) out.push({t16:t-lo,p,d16:d,h,f}); }); });
@@ -344,7 +361,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     const tg=buildTargets(ex,S.range,S.hands);
     const s16=60/S.bpm/4;
     tg.forEach(n=>{ n.t=n.t16*s16; n.dur=n.d16*s16; n.hit=-1; });
-    prepared={ex,targets:tg,s16,played:[],pedals:[],hands:S.hands,range:S.range,bar:S.bar,bpm:S.bpm,lo:tg.lo,m16:ex.m16||8};
+    prepared={ex,targets:tg,s16,played:[],pedals:[],hands:S.hands,range:S.range,bar:S.bar,bar2:S.bar2,bpm:S.bpm,lo:tg.lo,m16:ex.m16||8};
     viewSession=prepared; scrubMode=false; $('scrub').hidden=true;
     drawRoll(prepared, -2*s16*4*0 - 0.5);
   }
@@ -528,7 +545,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   function renderReport(rep,isSample){
     $('sampleBadge').hidden=!isSample;
     const sess=isSample?sampleSess:lastSession;
-    $('repMeta').textContent = sess ? `${getExName(sess.ex)}・${sess.bpm} BPM・${rangeName(sess.range,sess.bar)}・${handsName(sess.hands)}` : '';
+    $('repMeta').textContent = sess ? `${getExName(sess.ex)}・${sess.bpm} BPM・${rangeName(sess.range,sess.bar,sess.bar2)}・${handsName(sess.hands)}` : '';
     $('tScore').innerHTML=`${rep.total}<small>/100</small>`;
     const g = rep.total>=90?['優秀','g']:rep.total>=75?['不錯','g']:rep.total>=60?['還可以，再穩一點','l']:['先放慢速度','x'];
     $('tGrade').textContent=g[0]; $('tGrade').className='grade '+g[1];
@@ -572,13 +589,13 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     renderHistory();
   }
   function getExName(ex){ return ex.builtin?`哈農第 ${ex.key} 條`:ex.name; }
-  const rangeName=(r,b)=>r==='bar'?`第 ${b||1} 小節`:(({all:'全曲',up:'上行',down:'下行'})[r]||'全曲');
+  const rangeName=(r,b,b2)=>r==='bar'?(b2&&b2!==b?`第 ${b}–${b2} 小節`:`第 ${b||1} 小節`):(({all:'全曲',up:'上行',down:'下行'})[r]||'全曲');
   const handsName=h=>({both:'雙手',R:'右手',L:'左手'})[h]||'雙手';
 
   // ---------- history ----------
   function pushHistory(r,rep){
     const k=r.ex.key; const list=history[k]||[];
-    list.unshift({d:Date.now(),bpm:r.bpm,range:r.range,bar:r.bar,hands:r.hands,total:rep.total,p:rep.parts.map(x=>x[1]==null?null:Math.round(x[1]))});
+    list.unshift({d:Date.now(),bpm:r.bpm,range:r.range,bar:r.bar,bar2:r.bar2,hands:r.hands,total:rep.total,p:rep.parts.map(x=>x[1]==null?null:Math.round(x[1]))});
     history[k]=list.slice(0,20); saveJSON('hanon2-history',history); fillSelect();
   }
   function renderHistory(){
@@ -586,7 +603,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     if(!list.length){ $('histRows').innerHTML='<tr><td colspan="8" style="text-align:left;color:var(--muted)">這條還沒有紀錄。</td></tr>'; return; }
     const best=Math.max(...list.map(x=>x.total));
     $('histRows').innerHTML=list.slice(0,8).map(x=>{ const dt=new Date(x.d);
-      return `<tr><td>${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</td><td class="num">${x.bpm}</td><td>${rangeName(x.range,x.bar)}・${handsName(x.hands)}</td><td class="num ${x.total===best?'best':''}">${x.total}</td>${x.p.map(v=>`<td class="num">${v==null?'—':v}</td>`).join('')}</tr>`; }).join('');
+      return `<tr><td>${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</td><td class="num">${x.bpm}</td><td>${rangeName(x.range,x.bar,x.bar2)}・${handsName(x.hands)}</td><td class="num ${x.total===best?'best':''}">${x.total}</td>${x.p.map(v=>`<td class="num">${v==null?'—':v}</td>`).join('')}</tr>`; }).join('');
   }
 
   // ---------- staff notation ----------
