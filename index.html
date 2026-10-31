@@ -123,7 +123,12 @@ th{color:var(--muted);font-weight:500;font-size:.76rem}
     <div class="grid2">
       <div class="f">範圍
         <div class="seg" id="rangeSeg" role="group" aria-label="範圍">
-          <button type="button" data-v="all">全曲</button><button type="button" data-v="up">上行</button><button type="button" data-v="down">下行</button>
+          <button type="button" data-v="all">全曲</button><button type="button" data-v="up">上行</button><button type="button" data-v="down">下行</button><button type="button" data-v="bar">小節</button>
+        </div>
+        <div class="stepper" id="barBox" hidden>
+          <button type="button" data-bar="-1" aria-label="上一小節">−</button>
+          <input id="barNo" type="number" inputmode="numeric" min="1" value="1" aria-label="第幾小節">
+          <button type="button" data-bar="1" aria-label="下一小節">+</button>
         </div>
       </div>
       <div class="f">手
@@ -230,7 +235,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function loadJSON(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?def:v; }catch(e){ return def; } }
   function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } }
-  const S = Object.assign({ex:'1',range:'all',hands:'both',bpm:60,tol:25,lat:0,sound:'wood',subClick:false}, loadJSON('hanon2-settings',{}));
+  const S = Object.assign({ex:'1',range:'all',hands:'both',bpm:60,tol:25,lat:0,sound:'wood',subClick:false,bar:1}, loadJSON('hanon2-settings',{}));
   const old = loadJSON('hanon-timing',null); if(old && !loadJSON('hanon2-settings',null) && typeof old.lat==='number') S.lat=old.lat;
   const save=()=>saveJSON('hanon2-settings',S);
   let imports = loadJSON('hanon2-imports',[]);
@@ -260,8 +265,10 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   function syncUI(){
     const ex=getEx(S.ex); S.ex=ex.key;
     bpmI.value=S.bpm; latI.value=S.lat; $('tol').value=String(S.tol); $('sound').value=S.sound; $('subClick').checked=S.subClick;
-    if(ex.split==null && S.range!=='all') S.range='all';
-    document.querySelectorAll('#rangeSeg button').forEach(b=>{ b.setAttribute('aria-pressed',String(b.dataset.v===S.range)); b.disabled = b.dataset.v!=='all' && ex.split==null; });
+    if(ex.split==null && (S.range==='up'||S.range==='down')) S.range='all';
+    document.querySelectorAll('#rangeSeg button').forEach(b=>{ b.setAttribute('aria-pressed',String(b.dataset.v===S.range)); b.disabled = (b.dataset.v==='up'||b.dataset.v==='down') && ex.split==null; });
+    const nBars=Math.ceil(ex.len/(ex.m16||8)); S.bar=clamp(S.bar||1,1,nBars);
+    $('barBox').hidden = S.range!=='bar'; $('barNo').value=S.bar; $('barNo').max=nBars;
     document.querySelectorAll('#handSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===S.hands)));
     $('delImp').hidden = !!ex.builtin;
   }
@@ -270,6 +277,8 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   document.querySelectorAll('#handSeg button').forEach(b=>b.onclick=()=>{S.hands=b.dataset.v;save();syncUI();prepare();});
   document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{S.bpm=clamp(S.bpm+ +b.dataset.step,30,160);save();syncUI();prepare();});
   document.querySelectorAll('[data-lat]').forEach(b=>b.onclick=()=>{S.lat=clamp(S.lat+ +b.dataset.lat,-300,500);save();syncUI();});
+  document.querySelectorAll('[data-bar]').forEach(b=>b.onclick=()=>{S.bar=(S.bar||1)+ +b.dataset.bar;save();syncUI();prepare();});
+  $('barNo').onchange=()=>{S.bar=Math.round(+$('barNo').value||1);save();syncUI();prepare();};
   bpmI.onchange=()=>{S.bpm=clamp(Math.round(+bpmI.value||60),30,160);save();syncUI();prepare();};
   latI.onchange=()=>{S.lat=clamp(Math.round(+latI.value||0),-300,500);save();syncUI();};
   $('tol').onchange=()=>{S.tol=+$('tol').value;save(); if(lastSession) renderReport(analyze(lastSession),false); else if(sampleSess) renderReport(analyze(sampleSess),true); };
@@ -320,6 +329,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     let lo=0, hi=Infinity;
     if(range==='up'&&ex.split!=null) hi=ex.split;
     if(range==='down'&&ex.split!=null) lo=ex.split;
+    if(range==='bar'){ const M=ex.m16||8; lo=((S.bar||1)-1)*M; hi=lo+M; }
     const out=[];
     ['R','L'].forEach(h=>{ if(hands!=='both'&&hands!==h) return;
       ex[h].forEach(([t,p,d,f])=>{ if(t>=lo&&t<hi) out.push({t16:t-lo,p,d16:d,h,f}); }); });
@@ -334,7 +344,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     const tg=buildTargets(ex,S.range,S.hands);
     const s16=60/S.bpm/4;
     tg.forEach(n=>{ n.t=n.t16*s16; n.dur=n.d16*s16; n.hit=-1; });
-    prepared={ex,targets:tg,s16,played:[],pedals:[],hands:S.hands,range:S.range,bpm:S.bpm,lo:tg.lo,m16:ex.m16||8};
+    prepared={ex,targets:tg,s16,played:[],pedals:[],hands:S.hands,range:S.range,bar:S.bar,bpm:S.bpm,lo:tg.lo,m16:ex.m16||8};
     viewSession=prepared; scrubMode=false; $('scrub').hidden=true;
     drawRoll(prepared, -2*s16*4*0 - 0.5);
   }
@@ -375,7 +385,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
       const i=r.next, t=r.T0+i*r.s16;
       if(S.sound!=='off' || i<0 || r.calib){
         if(((i%4)+4)%4===0){ const beat=Math.round(i/4), bpmeas=Math.max(1,Math.round((r.m16||8)/4)); click(t, ((beat%bpmeas)+bpmeas)%bpmeas===0?'accent':'beat'); }
-        else if(!r.calib && S.subClick && i>=0) click(t,'sub');
+        else if(!r.calib && S.subClick) click(t,'sub');
       }
       r.next++;
     }
@@ -441,7 +451,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     if(r.played.length===0){ $('status').textContent='沒有收到任何音，請確認琴已連接（右上角顯示「已連接」）。'; prepare(); return; }
     lastSession=r;
     const rep=analyze(r);
-    if(rep.n<8){ $('status').textContent='彈的音太少，沒有評分。'; renderReport(rep,false); return; }
+    if(rep.n<(r.range==='bar'?4:8)){ $('status').textContent='彈的音太少，沒有評分。'; renderReport(rep,false); return; }
     $('status').textContent = aborted ? '已停止，以下是到停止為止的評分。' : '完成！往下看評分，或拖動樂譜下方的滑桿回看。';
     lastSession=r;
     pushHistory(r,rep);
@@ -518,7 +528,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   function renderReport(rep,isSample){
     $('sampleBadge').hidden=!isSample;
     const sess=isSample?sampleSess:lastSession;
-    $('repMeta').textContent = sess ? `${getExName(sess.ex)}・${sess.bpm} BPM・${rangeName(sess.range)}・${handsName(sess.hands)}` : '';
+    $('repMeta').textContent = sess ? `${getExName(sess.ex)}・${sess.bpm} BPM・${rangeName(sess.range,sess.bar)}・${handsName(sess.hands)}` : '';
     $('tScore').innerHTML=`${rep.total}<small>/100</small>`;
     const g = rep.total>=90?['優秀','g']:rep.total>=75?['不錯','g']:rep.total>=60?['還可以，再穩一點','l']:['先放慢速度','x'];
     $('tGrade').textContent=g[0]; $('tGrade').className='grade '+g[1];
@@ -562,13 +572,13 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     renderHistory();
   }
   function getExName(ex){ return ex.builtin?`哈農第 ${ex.key} 條`:ex.name; }
-  const rangeName=r=>({all:'全曲',up:'上行',down:'下行'})[r]||'全曲';
+  const rangeName=(r,b)=>r==='bar'?`第 ${b||1} 小節`:(({all:'全曲',up:'上行',down:'下行'})[r]||'全曲');
   const handsName=h=>({both:'雙手',R:'右手',L:'左手'})[h]||'雙手';
 
   // ---------- history ----------
   function pushHistory(r,rep){
     const k=r.ex.key; const list=history[k]||[];
-    list.unshift({d:Date.now(),bpm:r.bpm,range:r.range,hands:r.hands,total:rep.total,p:rep.parts.map(x=>x[1]==null?null:Math.round(x[1]))});
+    list.unshift({d:Date.now(),bpm:r.bpm,range:r.range,bar:r.bar,hands:r.hands,total:rep.total,p:rep.parts.map(x=>x[1]==null?null:Math.round(x[1]))});
     history[k]=list.slice(0,20); saveJSON('hanon2-history',history); fillSelect();
   }
   function renderHistory(){
@@ -576,7 +586,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     if(!list.length){ $('histRows').innerHTML='<tr><td colspan="8" style="text-align:left;color:var(--muted)">這條還沒有紀錄。</td></tr>'; return; }
     const best=Math.max(...list.map(x=>x.total));
     $('histRows').innerHTML=list.slice(0,8).map(x=>{ const dt=new Date(x.d);
-      return `<tr><td>${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</td><td class="num">${x.bpm}</td><td>${rangeName(x.range)}・${handsName(x.hands)}</td><td class="num ${x.total===best?'best':''}">${x.total}</td>${x.p.map(v=>`<td class="num">${v==null?'—':v}</td>`).join('')}</tr>`; }).join('');
+      return `<tr><td>${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</td><td class="num">${x.bpm}</td><td>${rangeName(x.range,x.bar)}・${handsName(x.hands)}</td><td class="num ${x.total===best?'best':''}">${x.total}</td>${x.p.map(v=>`<td class="num">${v==null?'—':v}</td>`).join('')}</tr>`; }).join('');
   }
 
   // ---------- staff notation ----------
