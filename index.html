@@ -62,7 +62,8 @@ details[open] summary{margin-bottom:12px}
 
 .rollbox{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft)}
 canvas{display:block;width:100%}
-#roll{height:214px}
+#roll{height:214px;touch-action:pan-y;cursor:grab}
+#roll:active{cursor:grabbing}
 .readout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;text-align:center}
 .readout div{display:grid;gap:0}
 .readout b{font-family:var(--f-num);font-size:1.35rem;font-variant-numeric:tabular-nums;font-weight:600;line-height:1.2}
@@ -149,9 +150,6 @@ th{color:var(--muted);font-weight:500;font-size:.76rem}
         <label class="toggle" id="accLbl" hidden><input id="accomp" type="checkbox"> 另一手由網頁彈（伴奏）</label>
       </div>
     </div>
-    <label class="toggle" style="justify-self:start">示範與伴奏的聲音
-      <select id="outSel" style="width:auto;padding:6px 8px"><option value="phone">手機</option><option value="midi">電鋼琴（透過 MIDI）</option></select>
-    </label>
     <div class="grid2">
       <label class="f">速度（四分音符 BPM）
         <div class="stepper">
@@ -197,7 +195,8 @@ th{color:var(--muted);font-weight:500;font-size:.76rem}
       <span><i style="background:var(--good);border-radius:50%;width:9px"></i>準</span><span><i style="background:var(--early);border-radius:50%;width:9px"></i>搶拍</span><span><i style="background:var(--late);border-radius:50%;width:9px"></i>拖拍</span>
       <span><i style="border:2px solid var(--bad);background:transparent;border-radius:50%;width:10px;height:10px"></i>漏彈</span><span style="color:var(--bad);font-weight:700">✕ <span style="color:var(--muted);font-weight:400">錯音／多彈</span></span>
     </div>
-    <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="回放位置" hidden>
+    <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="樂譜位置" hidden>
+    <p class="hint" style="margin-top:-6px">沒在彈的時候，可以左右拖動樂譜或滑桿看前後。</p>
     <div class="readout" aria-live="polite">
       <div><b id="rOff">—</b><small>最後一音</small></div>
       <div><b id="rHit" class="g">0</b><small>正確</small></div>
@@ -208,6 +207,9 @@ th{color:var(--muted);font-weight:500;font-size:.76rem}
     <div class="status" id="status">接上琴後按開始，會先數 4 下再開始。</div>
     <button type="button" class="btn primary" id="startBtn">開始</button>
     <button type="button" class="btn" id="demoBtn" style="width:100%">▶ 播放示範（不評分）</button>
+    <label class="f">示範和伴奏的聲音從哪裡出來
+      <select id="outSel"><option value="phone">手機喇叭</option></select>
+    </label>
   </section>
 
   <section aria-labelledby="repH">
@@ -287,7 +289,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     $('barBox').hidden = S.range!=='bar'; $('barNo').value=S.bar; $('barNo2').value=S.bar2; $('barNo').max=nBars; $('barNo2').max=nBars;
     document.querySelectorAll('#handSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===S.hands)));
     $('delImp').hidden = !!ex.builtin;
-    $('accomp').checked=!!S.accomp; $('accLbl').hidden = S.hands==='both'; $('outSel').value=S.out||'phone';
+    $('accomp').checked=!!S.accomp; $('accLbl').hidden = S.hands==='both'; fillOut();
   }
   $('exSel').onchange=()=>{ if(!$('exSel').value) return; S.ex=$('exSel').value; save(); syncUI(); prepare(); renderHistory(); };
   document.querySelectorAll('#rangeSeg button').forEach(b=>b.onclick=()=>{S.range=b.dataset.v;save();syncUI();prepare();});
@@ -303,7 +305,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   $('barNo').onchange=()=>setBars(+$('barNo').value, S.bar2, 'start');
   $('barNo2').onchange=()=>setBars(S.bar, +$('barNo2').value, 'end');
   $('accomp').onchange=()=>{S.accomp=$('accomp').checked;save();prepare();};
-  $('outSel').onchange=()=>{S.out=$('outSel').value;save(); if(S.out==='midi'&&!midiOut) $('status').textContent='還沒偵測到電鋼琴，接上琴之前會先用手機發聲。'; };
+  $('outSel').onchange=()=>{S.out=$('outSel').value;save();};
   bpmI.onchange=()=>{S.bpm=clamp(Math.round(+bpmI.value||60),30,160);save();syncUI();prepare();};
   latI.onchange=()=>{S.lat=clamp(Math.round(+latI.value||0),-300,500);save();syncUI();};
   $('tol').onchange=()=>{S.tol=+$('tol').value;save(); if(lastSession) renderReport(analyze(lastSession),false); else if(sampleSess) renderReport(analyze(sampleSess),true); };
@@ -312,11 +314,22 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     await ensureAudio(); const t=ctx.currentTime+0.05; click(t,'accent'); click(t+0.25,'sub'); click(t+0.5,'beat'); };
 
   // ---------- MIDI ----------
-  const chip=$('midiChip'); let midiOut=null;
+  const chip=$('midiChip'); let midiAccess=null;
+  function outputs(){ const a=[]; if(midiAccess) midiAccess.outputs.forEach(o=>a.push(o)); return a; }
+  function currentOut(){ if(!S.out||S.out==='phone') return null; const os=outputs();
+    if(S.out==='midi') return os[0]||null; return os.find(o=>'midi:'+o.id===S.out)||null; }
+  function fillOut(){
+    const sel=$('outSel'), os=outputs(); sel.innerHTML='';
+    sel.appendChild(new Option('手機喇叭','phone'));
+    os.forEach(o=>sel.appendChild(new Option('MIDI：'+(o.name||'裝置'),'midi:'+o.id)));
+    if(!os.length){ const o=new Option('（沒偵測到 MIDI 裝置，請先接上琴）',''); o.disabled=true; sel.appendChild(o); }
+    if(S.out==='midi' && os[0]) S.out='midi:'+os[0].id;
+    const cur=currentOut(); sel.value = cur ? 'midi:'+cur.id : 'phone';
+  }
   function setChip(t,c){ chip.textContent=t; chip.className='chip '+(c||''); }
   function bindInputs(access){
     const names=[]; access.inputs.forEach(inp=>{ inp.onmidimessage=onMidi; names.push(inp.name||'MIDI 裝置'); });
-    midiOut=null; access.outputs.forEach(o=>{ if(!midiOut) midiOut=o; });
+    midiAccess=access; fillOut();
     if(names.length) setChip('已連接：'+names[0],'ok'); else setChip('沒有偵測到琴，請檢查線材','warn');
   }
   if(navigator.requestMIDIAccess){
@@ -356,8 +369,9 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     o1.start(t); o2.start(t); o1.stop(end+0.5); o2.stop(end+0.5);
   }
   function playNote(r,t,p,dur,vel){
-    if(S.out==='midi' && midiOut){
-      try{ midiOut.send([0x90,p,vel],perfAt(r,t)+r.lat); midiOut.send([0x80,p,0],perfAt(r,t+dur*0.92)+r.lat); }catch(e){}
+    const mo=currentOut();
+    if(mo){
+      try{ mo.send([0x90,p,vel],perfAt(r,t)+r.lat); mo.send([0x80,p,0],perfAt(r,t+dur*0.92)+r.lat); }catch(e){}
       return;
     }
     if(!r.bus){ r.bus=ctx.createGain(); r.bus.gain.value=1; r.bus.connect(ctx.destination); }
@@ -365,7 +379,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   }
   function stopOutput(r){
     if(r.bus){ try{ r.bus.gain.setTargetAtTime(0,ctx.currentTime,0.02); const b=r.bus; setTimeout(()=>{try{b.disconnect();}catch(e){}},400); }catch(e){} r.bus=null; }
-    if(midiOut){ try{ midiOut.send([0xB0,123,0]); midiOut.send([0xB0,123,0],performance.now()+(r.lat||0)+250); }catch(e){} }
+    outputs().forEach(mo=>{ try{ mo.send([0xB0,123,0]); mo.send([0xB0,123,0],performance.now()+(r.lat||0)+250); }catch(e){} });
   }
 
   // ---------- pitch helpers ----------
@@ -396,8 +410,8 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     const s16=60/S.bpm/4;
     tg.forEach(n=>{ n.t=n.t16*s16; n.dur=n.d16*s16; n.hit=-1; });
     prepared={ex,targets:tg,s16,played:[],pedals:[],hands:S.hands,range:S.range,bar:S.bar,bar2:S.bar2,bpm:S.bpm,lo:tg.lo,m16:ex.m16||8};
-    viewSession=prepared; scrubMode=false; $('scrub').hidden=true;
-    drawRoll(prepared, -2*s16*4*0 - 0.5);
+    prepared.endSec=Math.max(...tg.map(n=>n.t16+n.d16),1)*s16;
+    viewSession=prepared; $('scrub').hidden=false; setView(-0.5);
   }
 
   // ---------- session ----------
@@ -720,7 +734,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     const g=cvs.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
     const C=tok(), s16=sess.s16, sp=7, hs=sp/2;
     const vis = W<520?16:24, px=(W*0.78)/vis/s16, headX=Math.max(64,W*0.2);
-    const X=t=>headX+(t-cur)*px;
+    lastPx=px; const X=t=>headX+(t-cur)*px;
     const rx=sp*0.62, ry=sp*0.44;
     const head=(x,y,col,hollow,thick)=>{ g.save(); g.translate(x,y); g.rotate(-0.35); g.beginPath(); g.ellipse(0,0,rx,ry,0,0,Math.PI*2);
       if(hollow){ g.strokeStyle=col; g.lineWidth=thick||1.4; g.stroke(); } else { g.fillStyle=col; g.fill(); } g.restore(); };
@@ -827,14 +841,20 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     // playhead
     line(headX,sysTop-2.5*sp,headX,sysBot+2.5*sp,C['--accent'],2);
   }
-  function redraw(){ if(!run&&viewSession) drawRoll(viewSession, scrubMode?(+$('scrub').value/1000)*viewSession.endSec:-0.5); }
+  let viewCur=-0.5, lastPx=1, drag=null;
+  function setView(t){ const sv=viewSession; if(!sv) return; const end=sv.endSec||1;
+    viewCur=clamp(t,-0.5,end); $('scrub').value=Math.round(1000*clamp(viewCur/end,0,1)); drawRoll(sv,viewCur); }
+  function redraw(){ if(!run&&viewSession) drawRoll(viewSession, viewCur); }
   function enableScrub(sess){
-    scrubMode=true; viewSession=sess; const sc=$('scrub'); sc.hidden=false;
+    scrubMode=true; viewSession=sess; $('scrub').hidden=false;
     let firstBad = sess.targets.find(n=>!n.bg && n.hit<0 && n.t<= (sess.cut??Infinity));
-    sc.value = firstBad ? Math.round(1000*clamp(firstBad.t/sess.endSec,0,1)) : 0;
-    drawRoll(sess, (+sc.value/1000)*sess.endSec);
+    setView(firstBad ? firstBad.t-0.3 : -0.5);
   }
-  $('scrub').oninput=()=>{ if(viewSession && scrubMode) drawRoll(viewSession,(+$('scrub').value/1000)*viewSession.endSec); };
+  $('scrub').oninput=()=>{ if(viewSession && !run) setView((+$('scrub').value/1000)*viewSession.endSec); };
+  cvs.addEventListener('pointerdown',e=>{ if(run||!viewSession) return; drag={x:e.clientX,c:viewCur,id:e.pointerId}; try{cvs.setPointerCapture(e.pointerId);}catch(_){} });
+  cvs.addEventListener('pointermove',e=>{ if(!drag||run) return; setView(drag.c-(e.clientX-drag.x)/lastPx); });
+  const endDrag=()=>{ drag=null; }; cvs.addEventListener('pointerup',endDrag); cvs.addEventListener('pointercancel',endDrag);
+  cvs.addEventListener('wheel',e=>{ if(run||!viewSession) return; const d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY; if(!d) return; e.preventDefault(); setView(viewCur+d/lastPx); },{passive:false});
   window.addEventListener('resize',redraw);
   new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
@@ -937,7 +957,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   lastSession=null;
   renderReport(analyze(sampleSess),true);
   viewSession=sampleSess; enableScrub(sampleSess);
-  $('status').textContent='上方樂譜是範例的回放，可以拖動滑桿看。接上琴後按開始，會先數 4 下再開始。';
+  $('status').textContent='接上琴後按開始，會先數 4 下再開始。想先聽聽看，按「播放示範」。';
 })();
 </script>
 </body></html>
