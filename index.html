@@ -146,8 +146,12 @@ th{color:var(--muted);font-weight:500;font-size:.76rem}
         <div class="seg" id="handSeg" role="group" aria-label="手">
           <button type="button" data-v="both">雙手</button><button type="button" data-v="R">右手</button><button type="button" data-v="L">左手</button>
         </div>
+        <label class="toggle" id="accLbl" hidden><input id="accomp" type="checkbox"> 另一手由網頁彈（伴奏）</label>
       </div>
     </div>
+    <label class="toggle" style="justify-self:start">示範與伴奏的聲音
+      <select id="outSel" style="width:auto;padding:6px 8px"><option value="phone">手機</option><option value="midi">電鋼琴（透過 MIDI）</option></select>
+    </label>
     <div class="grid2">
       <label class="f">速度（四分音符 BPM）
         <div class="stepper">
@@ -203,6 +207,7 @@ th{color:var(--muted);font-weight:500;font-size:.76rem}
     <div class="progress"><i id="prog"></i></div>
     <div class="status" id="status">接上琴後按開始，會先數 4 下再開始。</div>
     <button type="button" class="btn primary" id="startBtn">開始</button>
+    <button type="button" class="btn" id="demoBtn" style="width:100%">▶ 播放示範（不評分）</button>
   </section>
 
   <section aria-labelledby="repH">
@@ -246,7 +251,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function loadJSON(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?def:v; }catch(e){ return def; } }
   function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } }
-  const S = Object.assign({ex:'1',range:'all',hands:'both',bpm:60,tol:25,lat:0,sound:'wood',subClick:false,bar:1,bar2:1}, loadJSON('hanon2-settings',{}));
+  const S = Object.assign({ex:'1',range:'all',hands:'both',bpm:60,tol:25,lat:0,sound:'wood',subClick:false,bar:1,bar2:1,accomp:true,out:'phone'}, loadJSON('hanon2-settings',{}));
   const old = loadJSON('hanon-timing',null); if(old && !loadJSON('hanon2-settings',null) && typeof old.lat==='number') S.lat=old.lat;
   const save=()=>saveJSON('hanon2-settings',S);
   let imports = loadJSON('hanon2-imports',[]);
@@ -282,6 +287,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     $('barBox').hidden = S.range!=='bar'; $('barNo').value=S.bar; $('barNo2').value=S.bar2; $('barNo').max=nBars; $('barNo2').max=nBars;
     document.querySelectorAll('#handSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===S.hands)));
     $('delImp').hidden = !!ex.builtin;
+    $('accomp').checked=!!S.accomp; $('accLbl').hidden = S.hands==='both'; $('outSel').value=S.out||'phone';
   }
   $('exSel').onchange=()=>{ if(!$('exSel').value) return; S.ex=$('exSel').value; save(); syncUI(); prepare(); renderHistory(); };
   document.querySelectorAll('#rangeSeg button').forEach(b=>b.onclick=()=>{S.range=b.dataset.v;save();syncUI();prepare();});
@@ -296,6 +302,8 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   document.querySelectorAll('[data-bar2]').forEach(b=>b.onclick=()=>setBars(S.bar, (S.bar2||1)+ +b.dataset.bar2, 'end'));
   $('barNo').onchange=()=>setBars(+$('barNo').value, S.bar2, 'start');
   $('barNo2').onchange=()=>setBars(S.bar, +$('barNo2').value, 'end');
+  $('accomp').onchange=()=>{S.accomp=$('accomp').checked;save();prepare();};
+  $('outSel').onchange=()=>{S.out=$('outSel').value;save(); if(S.out==='midi'&&!midiOut) $('status').textContent='還沒偵測到電鋼琴，接上琴之前會先用手機發聲。'; };
   bpmI.onchange=()=>{S.bpm=clamp(Math.round(+bpmI.value||60),30,160);save();syncUI();prepare();};
   latI.onchange=()=>{S.lat=clamp(Math.round(+latI.value||0),-300,500);save();syncUI();};
   $('tol').onchange=()=>{S.tol=+$('tol').value;save(); if(lastSession) renderReport(analyze(lastSession),false); else if(sampleSess) renderReport(analyze(sampleSess),true); };
@@ -304,10 +312,11 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     await ensureAudio(); const t=ctx.currentTime+0.05; click(t,'accent'); click(t+0.25,'sub'); click(t+0.5,'beat'); };
 
   // ---------- MIDI ----------
-  const chip=$('midiChip');
+  const chip=$('midiChip'); let midiOut=null;
   function setChip(t,c){ chip.textContent=t; chip.className='chip '+(c||''); }
   function bindInputs(access){
     const names=[]; access.inputs.forEach(inp=>{ inp.onmidimessage=onMidi; names.push(inp.name||'MIDI 裝置'); });
+    midiOut=null; access.outputs.forEach(o=>{ if(!midiOut) midiOut=o; });
     if(names.length) setChip('已連接：'+names[0],'ok'); else setChip('沒有偵測到琴，請檢查線材','warn');
   }
   if(navigator.requestMIDIAccess){
@@ -336,6 +345,29 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     else { tone(t,'sine',f,f*0.85,0.75*v,0.07); burst(t,f*2,3,0.25*v,0.008); }
   }
 
+  const perfAt=(r,t)=>r.anchorP+(t-r.anchorA)*1000;
+  function pianoNote(bus,t,p,dur,vel){
+    const f=440*Math.pow(2,(p-69)/12), g=ctx.createGain(), lp=ctx.createBiquadFilter(), g2=ctx.createGain();
+    lp.type='lowpass'; lp.frequency.value=Math.min(9000,f*6); g2.gain.value=0.25;
+    const o1=ctx.createOscillator(), o2=ctx.createOscillator(); o1.type='triangle'; o2.type='sine'; o1.frequency.value=f; o2.frequency.value=f*2;
+    const peak=0.3*vel/100, len=Math.max(dur,0.1), dk=Math.min(0.35,len*0.9), end=t+len;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+0.006); g.gain.exponentialRampToValueAtTime(peak*0.4,t+dk); g.gain.setTargetAtTime(0.0001,end,0.06);
+    o1.connect(g); o2.connect(g2).connect(g); g.connect(lp).connect(bus);
+    o1.start(t); o2.start(t); o1.stop(end+0.5); o2.stop(end+0.5);
+  }
+  function playNote(r,t,p,dur,vel){
+    if(S.out==='midi' && midiOut){
+      try{ midiOut.send([0x90,p,vel],perfAt(r,t)+r.lat); midiOut.send([0x80,p,0],perfAt(r,t+dur*0.92)+r.lat); }catch(e){}
+      return;
+    }
+    if(!r.bus){ r.bus=ctx.createGain(); r.bus.gain.value=1; r.bus.connect(ctx.destination); }
+    pianoNote(r.bus,t,p,dur,vel);
+  }
+  function stopOutput(r){
+    if(r.bus){ try{ r.bus.gain.setTargetAtTime(0,ctx.currentTime,0.02); const b=r.bus; setTimeout(()=>{try{b.disconnect();}catch(e){}},400); }catch(e){} r.bus=null; }
+    if(midiOut){ try{ midiOut.send([0xB0,123,0]); midiOut.send([0xB0,123,0],performance.now()+(r.lat||0)+250); }catch(e){} }
+  }
+
   // ---------- pitch helpers ----------
   const WK={0:0,2:1,4:2,5:3,7:4,9:5,11:6};
   function dia(p){ const o=Math.floor(p/12), r=p-o*12; return WK[r]!=null ? o*7+WK[r] : o*7+WK[r-1]+0.5; }
@@ -358,7 +390,9 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   function prepare(){
     if(run) return;
     const ex=getEx(S.ex);
-    const tg=buildTargets(ex,S.range,S.hands);
+    const accOn = S.hands!=='both' && S.accomp;
+    const tg=buildTargets(ex,S.range, accOn?'both':S.hands);
+    if(accOn) tg.forEach(n=>{ n.bg = n.h!==S.hands; });
     const s16=60/S.bpm/4;
     tg.forEach(n=>{ n.t=n.t16*s16; n.dur=n.d16*s16; n.hit=-1; });
     prepared={ex,targets:tg,s16,played:[],pedals:[],hands:S.hands,range:S.range,bar:S.bar,bar2:S.bar2,bpm:S.bpm,lo:tg.lo,m16:ex.m16||8};
@@ -369,7 +403,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   // ---------- session ----------
   let run=null, timer=null, raf=null, wake=null, viewSession=null, lastSession=null, scrubMode=false;
   const winFor=s16=>clamp(0.6*s16,0.09,0.2);
-  async function start(calib){
+  async function start(calib,demo){
     if(run){ finish(true); return; }
     if(!calib && !prepared) prepare();
     await ensureAudio();
@@ -379,7 +413,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
       const s16=60/80/4, tg=[]; for(let k=0;k<8;k++) tg.push({i:k,t16:k*4,t:k*4*s16,p:-1,h:'R',f:0,d16:4,dur:4*s16,hit:-1});
       sess={calib:true,targets:tg,s16,played:[],pedals:[]};
     } else {
-      sess=prepared; sess.played=[]; sess.pedals=[]; sess.targets.forEach(n=>n.hit=-1); sess.sample=false;
+      sess=prepared; sess.played=[]; sess.pedals=[]; sess.targets.forEach(n=>n.hit=-1); sess.sample=false; sess.demo=!!demo;
     }
     const s16=sess.s16, countIn=16; // 4 quarter beats
     sess.T0 = ctx.currentTime + 0.2 + countIn*s16;
@@ -388,11 +422,13 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     sess.win = calib? 2*s16 : winFor(s16);
     sess.last16 = Math.max(...sess.targets.map(n=>n.t16+n.d16));
     sess.endSec = sess.last16*s16;
-    sess.next=-countIn; sess.active=new Map(); sess.pedalDown=false;
+    sess.next=-countIn; sess.ni=0; sess.bus=null; sess.active=new Map(); sess.pedalDown=false;
     run=sess; viewSession=sess; scrubMode=false; $('scrub').hidden=true;
-    $('startBtn').textContent='停止'; $('startBtn').classList.add('stop'); $('calBtn').disabled=true;
+    if(demo){ $('demoBtn').textContent='■ 停止示範'; $('startBtn').disabled=true; }
+    else { $('startBtn').textContent='停止'; $('startBtn').classList.add('stop'); $('demoBtn').disabled=true; }
+    $('calBtn').disabled=true;
     ['rHit','rMiss','rExtra'].forEach(id=>$(id).textContent='0'); $('rOff').textContent='—'; $('rOff').className='';
-    $('status').textContent = calib ? '校正中：聽到每一下就彈一個音（數 4 下後開始）' : '預備⋯數完 4 下就開始';
+    $('status').textContent = calib ? '校正中：聽到每一下就彈一個音（數 4 下後開始）' : demo ? '示範：數完 4 下開始播放' : '預備⋯數完 4 下就開始';
     timer=setInterval(schedule,25); schedule(); loop();
   }
   function schedule(){
@@ -406,15 +442,21 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
       }
       r.next++;
     }
+    if(!r.calib){
+      while(r.ni<r.targets.length && r.T0+r.targets[r.ni].t < ctx.currentTime+0.12){
+        const n=r.targets[r.ni++];
+        if(r.demo||n.bg) playNote(r, r.T0+n.t, n.p, n.dur, n.bg?64:80);
+      }
+    }
   }
   function nowRel(r){ return ctx.currentTime - r.T0 - r.lat/1000; }
   function loop(){
     const r=run; if(!r) return;
     const t=nowRel(r);
     $('prog').style.width=clamp(t/r.endSec,0,1)*100+'%';
-    if(t>=0 && $('status').textContent.startsWith('預備')) $('status').textContent='記錄中⋯';
-    if(!r.calib){
-      let miss=0; r.targets.forEach(n=>{ if(n.hit<0 && t-n.t>r.win) miss++; });
+    if(t>=0 && /^(預備|示範：)/.test($('status').textContent)) $('status').textContent=r.demo?'示範播放中⋯':'記錄中⋯';
+    if(!r.calib && !r.demo){
+      let miss=0; r.targets.forEach(n=>{ if(!n.bg && n.hit<0 && t-n.t>r.win) miss++; });
       $('rMiss').textContent=miss;
     }
     drawRoll(r,t);
@@ -423,13 +465,13 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   }
   function rel(r,perfT){ return r.anchorA + (perfT-r.anchorP)/1000 - r.T0 - r.lat/1000; }
   function noteOn(perfT,p,v){
-    const r=run; if(!r) return;
+    const r=run; if(!r||r.demo) return;
     const x=rel(r,perfT);
     if(x < -r.win) return;
     const pl={x,p,v,offX:null,tgt:-1,ped:r.pedalDown};
     let best=null;
     for(const n of r.targets){
-      if(n.hit>=0) continue;
+      if(n.hit>=0||n.bg) continue;
       if(n.t - x > r.win) break;
       if(x - n.t > r.win) continue;
       if(!r.calib && n.p!==p) continue;
@@ -443,10 +485,10 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
       const off=(x-best.t)*1000, c=Math.abs(off)<=S.tol?'g':off<0?'e':'l';
       $('rOff').textContent=(off>0?'+':off<0?'−':'')+Math.abs(Math.round(off)); $('rOff').className=c;
     } else { $('rOff').textContent='錯'; $('rOff').className='x'; }
-    $('rHit').textContent=r.targets.filter(n=>n.hit>=0).length;
+    $('rHit').textContent=r.targets.filter(n=>!n.bg&&n.hit>=0).length;
     $('rExtra').textContent=r.played.filter(q=>q.tgt<0).length;
   }
-  function noteOff(perfT,p){ const r=run; if(!r) return; const idx=r.active.get(p); if(idx==null) return; r.played[idx].offX=rel(r,perfT); r.active.delete(p); }
+  function noteOff(perfT,p){ const r=run; if(!r||r.demo) return; const idx=r.active.get(p); if(idx==null) return; r.played[idx].offX=rel(r,perfT); r.active.delete(p); }
   function pedal(perfT,down){ const r=run; if(!r) return; const x=rel(r,perfT);
     if(down && !r.pedalDown){ r.pedals.push([x,Infinity]); } else if(!down && r.pedalDown && r.pedals.length){ r.pedals[r.pedals.length-1][1]=x; }
     r.pedalDown=down; }
@@ -454,7 +496,10 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     const r=run; run=null; clearInterval(timer); cancelAnimationFrame(raf);
     try{ wake&&wake.release(); }catch(e){} wake=null;
     $('startBtn').textContent='開始'; $('startBtn').classList.remove('stop'); $('calBtn').disabled=false;
+    $('startBtn').disabled=false; $('demoBtn').disabled=false; $('demoBtn').textContent='▶ 播放示範（不評分）';
     if(!r) return;
+    stopOutput(r);
+    if(r.demo){ $('status').textContent = aborted ? '示範已停止。' : '示範結束。按「開始」換你彈。'; r.demo=false; prepare(); return; }
     if(r.calib){
       const offs=r.played.filter(q=>q.tgt>=0).map(q=>(q.x-r.targets[q.tgt].t)*1000).sort((a,b)=>a-b);
       if(offs.length>=4){ S.lat=Math.round(offs[Math.floor(offs.length/2)]); save(); syncUI();
@@ -478,13 +523,14 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   function nowRelSafe(r){ try{ return ctx.currentTime - r.T0 - r.lat/1000; }catch(e){ return Infinity; } }
   $('startBtn').onclick=()=>start(false);
   $('calBtn').onclick=()=>start(true);
+  $('demoBtn').onclick=()=>start(false,true);
 
   // ---------- analysis ----------
   function stats(a){ if(!a.length) return null; const m=a.reduce((s,x)=>s+x,0)/a.length; const sd=Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/a.length); return {m,sd,n:a.length}; }
   function underPedal(r,x){ return r.pedals.some(([a,b])=>x>=a&&x<=b); }
   function analyze(r){
     const tol=S.tol, cut=r.cut==null?Infinity:r.cut;
-    const T=r.targets.filter(n=>n.t<=cut);
+    const T=r.targets.filter(n=>n.t<=cut && !n.bg);
     const P=r.played;
     const hits=T.filter(n=>n.hit>=0);
     const missed=T.filter(n=>n.hit<0);
@@ -661,6 +707,8 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     }
   }
   function stateColor(C,sess,n,cur,done){
+    if(n.bg) return {col:C['--muted'],miss:false,pending:false};
+    if(sess.demo && run===sess) return cur>=n.t ? {col:C['--accent'],miss:false} : {col:C['--ink'],miss:false,pending:true};
     if(n.hit>=0){ const c=cls((sess.played[n.hit].x-n.t)*1000); return {col:C[c==='g'?'--good':c==='e'?'--early':'--late'],miss:false}; }
     if((done && sess.played.length) || (cur-n.t>sess.win)) return {col:C['--bad'],miss:true};
     return {col:C['--ink'],miss:false,pending:true};
@@ -782,7 +830,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
   function redraw(){ if(!run&&viewSession) drawRoll(viewSession, scrubMode?(+$('scrub').value/1000)*viewSession.endSec:-0.5); }
   function enableScrub(sess){
     scrubMode=true; viewSession=sess; const sc=$('scrub'); sc.hidden=false;
-    let firstBad = sess.targets.find(n=>n.hit<0 && n.t<= (sess.cut??Infinity));
+    let firstBad = sess.targets.find(n=>!n.bg && n.hit<0 && n.t<= (sess.cut??Infinity));
     sc.value = firstBad ? Math.round(1000*clamp(firstBad.t/sess.endSec,0,1)) : 0;
     drawRoll(sess, (+sc.value/1000)*sess.endSec);
   }
@@ -834,7 +882,7 @@ const HANON = [{"n":1,"len":240,"split":112,"R":[[0,48,1,1],[1,52,1,2],[2,53,1,3
     const first=Math.min(...notes.map(n=>n.tick));
     const q=x=>Math.round(x*4/div*1000)/1000;
     const R=[],L=[];
-    notes.sort((a,b)=>a.tick-b.tick||a.p-b.p).forEach(n=>{ const t=q(n.tick-first), d=Math.max(0.25,q(n.end-n.tick)); (n.h==='L'?L:R).push([t,n.p,Math.min(d,16),0]); });
+    notes.sort((a,b)=>a.tick-b.tick||a.p-b.p).forEach(n=>{ const t=Math.round(q(n.tick-first)*4)/4, raw=q(n.end-n.tick), d=raw>=0.75?Math.max(1,Math.round(raw)):Math.max(0.25,Math.round(raw*4)/4); (n.h==='L'?L:R).push([t,n.p,Math.min(d,16),0]); });
     const len=Math.max(...notes.map(n=>q(n.end-first)));
     return {R,L,len,m16:ts16||16};
   }
